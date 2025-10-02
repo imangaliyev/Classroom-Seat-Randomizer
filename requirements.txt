@@ -1,4 +1,0 @@
-# This file lists the Python packages required for the app.
-streamlit
-pandas
-numpy
