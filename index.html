@@ -1,25 +1,40 @@
-
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Classroom Randomizer</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/papaparse@5.3.2/papaparse.min.js"></script>
-  <script type="importmap">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>App Migration Notice</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; padding: 2em; background-color: #f0f2f5; color: #333; }
+        .container { max-width: 800px; margin: 0 auto; background-color: #fff; padding: 2em; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        h1 { color: #1e293b; }
+        code { background-color: #e2e8f0; padding: 0.2em 0.4em; border-radius: 4px; font-family: "SF Mono", "Consolas", "Menlo", monospace; }
+        ol { padding-left: 1.5em; }
+        li { margin-bottom: 0.5em; }
+    </style>
+<script type="importmap">
 {
   "imports": {
-    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "react": "https://aistudiocdn.com/react@^19.2.0",
     "react/": "https://aistudiocdn.com/react@^19.2.0/",
-    "react": "https://aistudiocdn.com/react@^19.2.0"
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/"
   }
 }
 </script>
 </head>
-  <body class="bg-slate-50">
-    <div id="root"></div>
-    <script type="module" src="/index.tsx"></script>
-  </body>
+<body>
+    <div class="container">
+        <h1>Application successfully converted to Streamlit!</h1>
+        <p>This React application has been replaced with a Python Streamlit application.</p>
+        <p>Please follow these steps to run it:</p>
+        <ol>
+            <li>Rename the file <code>index.tsx</code> to <code>app.py</code>.</li>
+            <li>Rename the file <code>App.tsx</code> to <code>requirements.txt</code>.</li>
+            <li>Open your terminal or command prompt.</li>
+            <li>Install the required Python packages: <code>pip install -r requirements.txt</code></li>
+            <li>Run the Streamlit application: <code>streamlit run app.py</code></li>
+        </ol>
+        <p>You can now delete all other <code>.tsx</code>, <code>.ts</code>, and <code>.json</code> files as they are no longer needed.</p>
+    </div>
+</body>
 </html>
