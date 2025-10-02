@@ -1,0 +1,5 @@
+{
+  "name": "Classroom Randomizer",
+  "description": "An application to randomly assign students to classrooms and desks, ensuring that students from the same original group are not seated at the same desk.",
+  "requestFramePermissions": []
+}
