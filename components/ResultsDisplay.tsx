@@ -8,8 +8,30 @@ interface ResultsDisplayProps {
   classrooms: Classroom[];
 }
 
+const getGradeLevel = (className: string): string => {
+  const match = className.match(/^\d+/);
+  return match ? match[0] : className;
+};
+
 const DeskCard: React.FC<{ student1: Student | null; student2: Student | null; deskNumber: number }> = ({ student1, student2, deskNumber }) => {
-    const hasConflict = student1 && student2 && student1.class === student2.class;
+    const conflictMessages: string[] = [];
+    if (student1 && student2) {
+        const sameClass = student1.class === student2.class;
+        const sameLastName = student1.lastName === student2.lastName;
+        const sameGrade = getGradeLevel(student1.class) === getGradeLevel(student2.class);
+
+        if (sameClass) {
+            conflictMessages.push('Same Class');
+        } else if (sameGrade) { // Only show same grade if not same class (less redundant)
+            conflictMessages.push('Same Grade Level');
+        }
+        if (sameLastName) {
+            conflictMessages.push('Same Last Name');
+        }
+    }
+
+    const hasConflict = conflictMessages.length > 0;
+    const conflictText = conflictMessages.join(', ');
 
     return (
         <div className={`p-3 rounded-lg shadow-sm ${hasConflict ? 'bg-amber-100 border border-amber-400' : 'bg-slate-100'}`}>
@@ -18,19 +40,19 @@ const DeskCard: React.FC<{ student1: Student | null; student2: Student | null; d
                 <div className="flex items-center">
                     <span className="w-4 text-center font-mono text-slate-500 text-xs mr-2">1</span>
                     <div className="w-full bg-white p-1.5 rounded text-sm truncate">
-                        <p className="font-medium text-slate-800">{student1?.studentName || <span className="text-slate-400">Empty</span>}</p>
+                        <p className="font-medium text-slate-800">{student1 ? `${student1.firstName} ${student1.lastName}` : <span className="text-slate-400">Empty</span>}</p>
                         {student1 && <p className="text-xs text-slate-500">{student1.class}</p>}
                     </div>
                 </div>
                  <div className="flex items-center">
                     <span className="w-4 text-center font-mono text-slate-500 text-xs mr-2">2</span>
                     <div className="w-full bg-white p-1.5 rounded text-sm truncate">
-                        <p className="font-medium text-slate-800">{student2?.studentName || <span className="text-slate-400">Empty</span>}</p>
+                        <p className="font-medium text-slate-800">{student2 ? `${student2.firstName} ${student2.lastName}` : <span className="text-slate-400">Empty</span>}</p>
                         {student2 && <p className="text-xs text-slate-500">{student2.class}</p>}
                     </div>
                 </div>
             </div>
-            {hasConflict && <p className="text-xs text-amber-700 mt-2 text-center font-medium">Same Group Pairing</p>}
+            {hasConflict && <p className="text-xs text-amber-700 mt-2 text-center font-medium">{conflictText}</p>}
         </div>
     );
 }
@@ -44,52 +66,66 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ seatingChart, classroom
       return;
     }
 
-    let content = `<html><head><title>Student List</title>`;
+    // 1. Group students by their original class
+    const studentsByOriginalClass: Record<string, { student: Student; classroomName: string; desk: string }[]> = {};
+
+    classrooms.forEach(classroom => {
+      seatingChart[classroom.id]?.forEach((desk, deskIndex) => {
+        desk.students.forEach(student => {
+          if (student) {
+            if (!studentsByOriginalClass[student.class]) {
+              studentsByOriginalClass[student.class] = [];
+            }
+            studentsByOriginalClass[student.class].push({
+              student,
+              classroomName: classroom.name,
+              desk: `Desk ${deskIndex + 1}`,
+            });
+          }
+        });
+      });
+    });
+
+    let content = `<html><head><title>Student List by Original Class</title>`;
     content += `<style>
         body { font-family: sans-serif; margin: 20px; }
-        .page { page-break-before: always; }
-        .page:first-child { page-break-before: avoid; }
+        .page { page-break-inside: avoid; }
         h1 { font-size: 24px; text-align: center; margin-bottom: 20px; }
-        h2 { font-size: 20px; border-bottom: 1px solid #ccc; padding-bottom: 5px; margin-top: 30px; margin-bottom: 5px; }
-        h3.supervisor { font-size: 16px; font-weight: normal; color: #555; margin-top: 0; margin-bottom: 15px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        h2 { font-size: 20px; border-bottom: 1px solid #ccc; padding-bottom: 5px; margin-top: 30px; margin-bottom: 15px; }
+        table { width: 100%; border-collapse: collapse; }
         th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
         th { background-color: #f2f2f2; }
     </style></head><body>`;
-    content += `<h1>Student Placement List</h1>`;
+    content += `<h1>Student Placement List by Original Class</h1>`;
 
-    classrooms.forEach(classroom => {
-        if (!seatingChart[classroom.id]) return;
+    // 2. Create a sorted list of tables, one for each original class
+    const originalClasses = Object.keys(studentsByOriginalClass).sort();
 
-        const studentsInClassroom: { student: Student, desk: string }[] = [];
-        seatingChart[classroom.id].forEach((desk, deskIndex) => {
-            if (desk.students[0]) {
-                studentsInClassroom.push({ student: desk.students[0], desk: `Desk ${deskIndex + 1}` });
-            }
-            if (desk.students[1]) {
-                studentsInClassroom.push({ student: desk.students[1], desk: `Desk ${deskIndex + 1}` });
-            }
-        });
-
-        // Sort students alphabetically by name
-        studentsInClassroom.sort((a, b) => a.student.studentName.localeCompare(b.student.studentName));
-
-        content += `<div class="page">`;
-        content += `<h2>${classroom.name}</h2>`;
-        if (classroom.supervisor) {
-            content += `<h3 class="supervisor">Supervisor: ${classroom.supervisor}</h3>`;
+    originalClasses.forEach(className => {
+      const studentEntries = studentsByOriginalClass[className];
+      
+      // Sort students within the group alphabetically
+      studentEntries.sort((a, b) => {
+        if (a.student.lastName.localeCompare(b.student.lastName) !== 0) {
+          return a.student.lastName.localeCompare(b.student.lastName);
         }
-        content += `<table><thead><tr><th>Student Name</th><th>Original Class</th><th>Assigned Desk</th></tr></thead><tbody>`;
-        
-        studentsInClassroom.forEach(({ student, desk }) => {
-            content += `<tr>
-                <td>${student.studentName}</td>
-                <td>${student.class}</td>
-                <td>${desk}</td>
-            </tr>`;
-        });
-        
-        content += `</tbody></table></div>`;
+        return a.student.firstName.localeCompare(b.student.firstName);
+      });
+
+      content += `<div class="page">`;
+      content += `<h2>Original Class: ${className}</h2>`;
+      content += `<table><thead><tr><th>First Name</th><th>Last Name</th><th>Assigned Classroom</th><th>Assigned Desk</th></tr></thead><tbody>`;
+      
+      studentEntries.forEach(({ student, classroomName, desk }) => {
+        content += `<tr>
+            <td>${student.firstName}</td>
+            <td>${student.lastName}</td>
+            <td>${classroomName}</td>
+            <td>${desk}</td>
+        </tr>`;
+      });
+      
+      content += `</tbody></table></div>`;
     });
 
     content += `</body></html>`;
@@ -145,10 +181,10 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ seatingChart, classroom
             content += `<div class="desk-card">
                 <p class="desk-title">Desk ${index + 1}</p>
                 <div class="student-slot">
-                    ${student1 ? `<p class="student-name">${student1.studentName}</p><p class="student-class">${student1.class}</p>` : `<p class="empty">Empty</p>`}
+                    ${student1 ? `<p class="student-name">${student1.firstName} ${student1.lastName}</p><p class="student-class">${student1.class}</p>` : `<p class="empty">Empty</p>`}
                 </div>
                 <div class="student-slot">
-                    ${student2 ? `<p class="student-name">${student2.studentName}</p><p class="student-class">${student2.class}</p>` : `<p class="empty">Empty</p>`}
+                    ${student2 ? `<p class="student-name">${student2.firstName} ${student2.lastName}</p><p class="student-class">${student2.class}</p>` : `<p class="empty">Empty</p>`}
                 </div>
             </div>`;
         });

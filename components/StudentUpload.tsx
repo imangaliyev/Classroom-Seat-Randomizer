@@ -12,6 +12,17 @@ interface StudentUploadProps {
   totalCapacity: number;
 }
 
+// A helper to normalize object keys to lowercase and trimmed strings
+const normalizeKeys = (obj: any): any => {
+  const newObj: any = {};
+  for (const key in obj) {
+    if (Object.prototype.hasOwnProperty.call(obj, key)) {
+      newObj[key.toLowerCase().trim()] = obj[key];
+    }
+  }
+  return newObj;
+};
+
 const StudentUpload: React.FC<StudentUploadProps> = ({ onStudentsUpload, studentCount, totalCapacity }) => {
   const [fileName, setFileName] = useState<string | null>(null);
   const [classSummary, setClassSummary] = useState<Record<string, number> | null>(null);
@@ -31,27 +42,30 @@ const StudentUpload: React.FC<StudentUploadProps> = ({ onStudentsUpload, student
             return;
           }
 
-          const requiredHeaders = ['student name', 'class'];
-          // Find the first row to check headers
-          const firstRow = results.data[0];
+          const normalizedData = results.data.map(normalizeKeys);
+
+          const firstRow = normalizedData[0];
           if (!firstRow) {
               onStudentsUpload([], 'CSV file is empty or has no data rows.');
               setClassSummary(null);
               return;
           }
-          const headers = Object.keys(firstRow).map(h => h.toLowerCase().trim());
+
+          const headers = Object.keys(firstRow);
+          const requiredHeaders = ['first name', 'last name', 'class'];
 
           if (!requiredHeaders.every(h => headers.includes(h))) {
-            onStudentsUpload([], 'CSV must contain "student name" and "class" columns.');
+            onStudentsUpload([], 'CSV must contain "first name", "last name", and "class" columns.');
             setClassSummary(null);
             return;
           }
 
-          const students: Student[] = results.data.map((row: any, index: number) => ({
+          const students: Student[] = normalizedData.map((row: any, index: number) => ({
             id: `student-${Date.now()}-${index}`,
-            studentName: row['student name'] || row['Student Name'] || '',
-            class: row['class'] || row['Class'] || '',
-          })).filter(s => s.studentName.trim() !== '' && s.class.trim() !== '');
+            firstName: row['first name'] || '',
+            lastName: row['last name'] || '',
+            class: row['class'] || '',
+          })).filter(s => s.firstName.trim() !== '' && s.lastName.trim() !== '' && s.class.trim() !== '');
 
           const summary: Record<string, number> = {};
           students.forEach(student => {
@@ -77,7 +91,7 @@ const StudentUpload: React.FC<StudentUploadProps> = ({ onStudentsUpload, student
     <div className="p-4 border border-slate-200 rounded-lg h-full flex flex-col justify-between">
       <div>
         <h3 className="text-xl font-semibold text-slate-700 mb-3">2. Upload Student List</h3>
-        <p className="text-sm text-slate-500 mb-4">Upload a .csv file with columns: "student name" and "class".</p>
+        <p className="text-sm text-slate-500 mb-4">Upload a .csv file with columns: "first name", "last name", and "class".</p>
         
         <input
           type="file"

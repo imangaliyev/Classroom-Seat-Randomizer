@@ -1,6 +1,11 @@
 import { useState, useCallback } from 'react';
 import { Student, Classroom, SeatingChart } from '../types';
 
+const getGradeLevel = (className: string): string => {
+  const match = className.match(/^\d+/);
+  return match ? match[0] : className; // Fallback to full class name if no number prefix
+};
+
 export const useSeatingArrangement = () => {
   const [seatingChart, setSeatingChart] = useState<SeatingChart | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -52,15 +57,34 @@ export const useSeatingArrangement = () => {
 
             if (studentQueue.length === 0) break;
 
-            // Find a suitable partner for the second seat
-            let partnerIndex = studentQueue.findIndex(s => s.class !== student1.class);
+            // Find a suitable partner for the second seat with prioritized constraints
+            const student1Grade = getGradeLevel(student1.class);
+            let partnerIndex = -1;
+
+            // P1: Different class, last name, and grade
+            partnerIndex = studentQueue.findIndex(s => s.class !== student1.class && s.lastName !== student1.lastName && getGradeLevel(s.class) !== student1Grade);
+            
+            // P2: Different class and last name (relax grade)
+            if (partnerIndex === -1) {
+                partnerIndex = studentQueue.findIndex(s => s.class !== student1.class && s.lastName !== student1.lastName);
+            }
+
+            // P3: Different class and grade (relax last name)
+            if (partnerIndex === -1) {
+                partnerIndex = studentQueue.findIndex(s => s.class !== student1.class && getGradeLevel(s.class) !== student1Grade);
+            }
+            
+            // P4: Just different class
+            if (partnerIndex === -1) {
+              partnerIndex = studentQueue.findIndex(s => s.class !== student1.class);
+            }
 
             if (partnerIndex !== -1) {
               const student2 = studentQueue.splice(partnerIndex, 1)[0];
               desk.students[1] = student2;
             } else {
-              // No suitable partner found, means all remaining students are from the same class.
-              // We must pair them, but this will be flagged in the UI.
+              // No suitable partner from a different class found.
+              // Take the next student in the queue, which may result in a conflict.
               if (studentQueue.length > 0) {
                   const student2 = studentQueue.shift()!;
                   desk.students[1] = student2;
