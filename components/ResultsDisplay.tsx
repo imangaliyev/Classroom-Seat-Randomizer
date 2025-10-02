@@ -199,12 +199,122 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ seatingChart, classroom
     printWindow.focus();
     printWindow.print();
   };
+  
+  const handlePrintSupervisorReports = () => {
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      alert('Could not open print window. Please disable your pop-up blocker.');
+      return;
+    }
+
+    let content = `<html><head><title>Supervisor Reports</title>`;
+    content += `<style>
+        @page {
+            size: A4;
+            margin: 1.5cm;
+        }
+        body { 
+            font-family: sans-serif;
+            margin: 0;
+        }
+        .page { 
+            page-break-before: always; 
+            page-break-inside: avoid;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+        .page:first-child { 
+            page-break-before: avoid; 
+        }
+        .page-content {
+            /* flex-grow: 1; */
+        }
+        h1 { text-align: center; }
+        h2 { font-size: 20px; border-bottom: 1px solid #ccc; padding-bottom: 5px; margin-bottom: 0; }
+        p.supervisor { font-size: 16px; color: #555; margin-top: 5px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; vertical-align: bottom; height: 30px;}
+        th { background-color: #f2f2f2; text-align: left; }
+        .footer {
+            margin-top: auto;
+            border-top: 1px solid #000;
+            padding-top: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            font-size: 14px;
+        }
+    </style></head><body>`;
+    content += `<h1>Supervisor Reports</h1>`;
+
+    classrooms.forEach(classroom => {
+        const desks = seatingChart[classroom.id];
+        if (!desks) return;
+        
+        const studentsInClassroom: Student[] = [];
+        desks.forEach(desk => {
+            if (desk.students[0]) studentsInClassroom.push(desk.students[0]);
+            if (desk.students[1]) studentsInClassroom.push(desk.students[1]);
+        });
+
+        // Sort students
+        studentsInClassroom.sort((a, b) => {
+            if (a.lastName.localeCompare(b.lastName) !== 0) {
+              return a.lastName.localeCompare(b.lastName);
+            }
+            return a.firstName.localeCompare(b.firstName);
+        });
+
+        content += `<div class="page">`;
+        content += `<div class="page-content">`
+        content += `<h2>Classroom: ${classroom.name}</h2>`;
+        content += `<p class="supervisor">Supervisor: ${classroom.supervisor || 'N/A'}</p>`;
+        
+        content += `<table><thead><tr>
+            <th>First Name</th>
+            <th>Last Name</th>
+            <th>Class</th>
+            <th style="width: 10%;">Variant</th>
+            <th style="width: 20%;">ID Number</th>
+            <th style="width: 25%;">Signature</th>
+            </tr></thead><tbody>`;
+        
+        studentsInClassroom.forEach(student => {
+            content += `<tr>
+                <td>${student.firstName}</td>
+                <td>${student.lastName}</td>
+                <td>${student.class}</td>
+                <td></td>
+                <td></td>
+                <td></td>
+            </tr>`;
+        });
+        
+        content += `</tbody></table>`;
+        content += `</div>`; // end page-content
+
+        content += `<div class="footer">
+            <span>Supervisor: ${classroom.supervisor || 'N/A'}</span>
+            <span>Supervisor Signature: _________________________</span>
+        </div>`;
+
+        content += `</div>`; // end page
+    });
+
+    content += `</body></html>`;
+
+    printWindow.document.write(content);
+    printWindow.document.close();
+    printWindow.focus();
+    printWindow.print();
+  };
 
   return (
     <div className="bg-white p-6 rounded-2xl shadow-lg">
       <div className="flex flex-wrap justify-between items-center border-b pb-3 mb-4 gap-2">
         <h2 className="text-2xl font-semibold text-slate-800">Seating Arrangement</h2>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
             <button
               onClick={handlePrintStudentList}
               className="inline-flex items-center gap-2 px-4 py-2 bg-slate-100 text-slate-700 font-medium rounded-md hover:bg-slate-200 transition-colors text-sm"
@@ -220,6 +330,14 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ seatingChart, classroom
             >
               <PrintIcon />
               Export Chart
+            </button>
+            <button
+              onClick={handlePrintSupervisorReports}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-slate-100 text-slate-700 font-medium rounded-md hover:bg-slate-200 transition-colors text-sm"
+              aria-label="Export supervisor reports"
+            >
+              <PrintIcon />
+              Supervisor Reports
             </button>
         </div>
       </div>
