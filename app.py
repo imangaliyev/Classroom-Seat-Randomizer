@@ -1,6 +1,4 @@
-// Fix: Replaced Python Streamlit application code with a standard React entry point.
-// This script now renders the main `App` component to the DOM, assuming a standard
-// React project setup (like Create React App or Vite) with an HTML file containing a `<div id="root">`.
+
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
@@ -16,3 +14,4 @@ root.render(
     <App />
   </React.StrictMode>
 );
+
