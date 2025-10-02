@@ -3,6 +3,7 @@ export interface Student {
   firstName: string;
   lastName: string;
   class: string;
+  studentId?: string;
 }
 
 export interface Classroom {

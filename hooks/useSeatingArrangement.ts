@@ -46,21 +46,33 @@ export const useSeatingArrangement = () => {
           }));
         });
 
-        // 4. Assignment Logic
-        for (const classroom of classrooms) {
-          for (const desk of newSeatingChart[classroom.id]) {
-            if (studentQueue.length === 0) break;
+        // 4. Assignment Logic - Round-robin for even distribution
+        const maxDesks = Math.max(0, ...classrooms.map(c => newSeatingChart[c.id]?.length || 0));
 
+        for (let deskIndex = 0; deskIndex < maxDesks; deskIndex++) {
+          if (studentQueue.length === 0) break;
+    
+          // Shuffle classrooms each round to avoid bias towards the first classroom in the list
+          const shuffledClassrooms = [...classrooms].sort(() => Math.random() - 0.5);
+    
+          for (const classroom of shuffledClassrooms) {
+            if (studentQueue.length === 0) break;
+    
+            const desk = newSeatingChart[classroom.id]?.[deskIndex];
+            if (!desk) {
+              continue; // This classroom has fewer desks, skip.
+            }
+            
             // Assign first student
             const student1 = studentQueue.shift()!;
             desk.students[0] = student1;
-
+    
             if (studentQueue.length === 0) break;
-
-            // Find a suitable partner for the second seat with prioritized constraints
+    
+            // Find a suitable partner for the second seat
             const student1Grade = getGradeLevel(student1.class);
             let partnerIndex = -1;
-
+    
             // P1: Different class, last name, and grade
             partnerIndex = studentQueue.findIndex(s => s.class !== student1.class && s.lastName !== student1.lastName && getGradeLevel(s.class) !== student1Grade);
             
@@ -68,7 +80,7 @@ export const useSeatingArrangement = () => {
             if (partnerIndex === -1) {
                 partnerIndex = studentQueue.findIndex(s => s.class !== student1.class && s.lastName !== student1.lastName);
             }
-
+    
             // P3: Different class and grade (relax last name)
             if (partnerIndex === -1) {
                 partnerIndex = studentQueue.findIndex(s => s.class !== student1.class && getGradeLevel(s.class) !== student1Grade);
@@ -78,7 +90,7 @@ export const useSeatingArrangement = () => {
             if (partnerIndex === -1) {
               partnerIndex = studentQueue.findIndex(s => s.class !== student1.class);
             }
-
+    
             if (partnerIndex !== -1) {
               const student2 = studentQueue.splice(partnerIndex, 1)[0];
               desk.students[1] = student2;

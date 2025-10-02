@@ -211,39 +211,40 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ seatingChart, classroom
     content += `<style>
         @page {
             size: A4;
-            margin: 1.5cm;
+            margin: 1cm;
         }
         body { 
             font-family: sans-serif;
             margin: 0;
+            font-size: 10pt;
         }
         .page { 
             page-break-before: always; 
             page-break-inside: avoid;
             display: flex;
             flex-direction: column;
-            height: 100%;
+            height: 26.7cm;
         }
         .page:first-child { 
             page-break-before: avoid; 
         }
         .page-content {
-            /* flex-grow: 1; */
+           flex-grow: 1;
         }
-        h1 { text-align: center; }
-        h2 { font-size: 20px; border-bottom: 1px solid #ccc; padding-bottom: 5px; margin-bottom: 0; }
-        p.supervisor { font-size: 16px; color: #555; margin-top: 5px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; vertical-align: bottom; height: 30px;}
+        h1 { text-align: center; font-size: 18px; }
+        h2 { font-size: 16px; border-bottom: 1px solid #ccc; padding-bottom: 5px; margin-bottom: 0; }
+        p.supervisor { font-size: 12px; color: #555; margin-top: 5px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th, td { border: 1px solid #ddd; padding: 4px; text-align: left; vertical-align: middle; }
         th { background-color: #f2f2f2; text-align: left; }
         .footer {
             margin-top: auto;
             border-top: 1px solid #000;
-            padding-top: 10px;
+            padding-top: 5px;
             display: flex;
             justify-content: space-between;
             align-items: baseline;
-            font-size: 14px;
+            font-size: 10px;
         }
     </style></head><body>`;
     content += `<h1>Supervisor Reports</h1>`;
@@ -276,7 +277,7 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ seatingChart, classroom
             <th>Last Name</th>
             <th>Class</th>
             <th style="width: 10%;">Variant</th>
-            <th style="width: 20%;">ID Number</th>
+            <th style="width: 20%;">Student ID</th>
             <th style="width: 25%;">Signature</th>
             </tr></thead><tbody>`;
         
@@ -286,7 +287,7 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ seatingChart, classroom
                 <td>${student.lastName}</td>
                 <td>${student.class}</td>
                 <td></td>
-                <td></td>
+                <td>${student.studentId || ''}</td>
                 <td></td>
             </tr>`;
         });
