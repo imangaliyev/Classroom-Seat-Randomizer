@@ -18,7 +18,7 @@ const ClassroomSetup: React.FC<ClassroomSetupProps> = ({ classrooms, setClassroo
   const handleAddClassroom = () => {
     setClassrooms(prev => [
       ...prev,
-      { id: `classroom-${Date.now()}`, name: '', capacity: 30, supervisor: '' },
+      { id: `classroom-${Date.now()}`, name: '', capacity: 30, supervisor: '', supervisor2: '' },
     ]);
   };
 
@@ -26,7 +26,7 @@ const ClassroomSetup: React.FC<ClassroomSetupProps> = ({ classrooms, setClassroo
     setClassrooms(prev => prev.filter(c => c.id !== id));
   };
 
-  const handleUpdateClassroom = (id: string, field: 'name' | 'capacity' | 'supervisor', value: string | number) => {
+  const handleUpdateClassroom = (id: string, field: 'name' | 'capacity' | 'supervisor' | 'supervisor2', value: string | number) => {
     setClassrooms(prev =>
       prev.map(c => (c.id === id ? { ...c, [field]: value } : c))
     );
@@ -84,6 +84,7 @@ const ClassroomSetup: React.FC<ClassroomSetupProps> = ({ classrooms, setClassroo
             name: row['classroom name'] || row['Classroom Name'] || '',
             capacity: parseInt(row['seat capacity'] || row['Seat Capacity'], 10) || 0,
             supervisor: row['supervisor'] || row['Supervisor'] || '',
+            supervisor2: row['supervisor 2'] || row['Supervisor 2'] || '',
           })).filter(c => c.name.trim() !== '' && c.capacity > 0);
 
           if (newClassrooms.length > 0) {
@@ -105,11 +106,11 @@ const ClassroomSetup: React.FC<ClassroomSetupProps> = ({ classrooms, setClassroo
       <h3 className="text-xl font-semibold text-slate-700 mb-3">1. Define Classrooms</h3>
       <p className="text-sm text-slate-500 mb-4">
         Add classrooms manually, or upload a .csv file to replace the list. <br/>
-        Required columns: "classroom name", "seat capacity". Optional: "supervisor".
+        Required columns: "classroom name", "seat capacity". Optional: "supervisor", "supervisor 2".
       </p>
       <div className="space-y-3 max-h-60 overflow-y-auto pr-2">
         {classrooms.map((classroom, index) => (
-          <div key={classroom.id} className="grid grid-cols-[auto,1fr,1fr,auto,auto] items-center gap-2 p-2 bg-slate-50 rounded-md">
+          <div key={classroom.id} className="grid grid-cols-[auto,1fr,1fr,1fr,auto,auto,auto] items-center gap-2 p-2 bg-slate-50 rounded-md">
             <span className="font-medium text-slate-500">{index + 1}.</span>
             <input
               type="text"
@@ -123,6 +124,13 @@ const ClassroomSetup: React.FC<ClassroomSetupProps> = ({ classrooms, setClassroo
               placeholder="Supervisor"
               value={classroom.supervisor}
               onChange={e => handleUpdateClassroom(classroom.id, 'supervisor', e.target.value)}
+              className="w-full p-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+            />
+            <input
+              type="text"
+              placeholder="Supervisor 2"
+              value={classroom.supervisor2}
+              onChange={e => handleUpdateClassroom(classroom.id, 'supervisor2', e.target.value)}
               className="w-full p-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
             />
             <input

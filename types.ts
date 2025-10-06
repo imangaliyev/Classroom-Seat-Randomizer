@@ -13,6 +13,7 @@ export interface Classroom {
   name: string;
   capacity: number; // Number of seats
   supervisor?: string;
+  supervisor2?: string;
 }
 
 export interface Desk {

@@ -150,7 +150,7 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ seatingChart, classroom
         .page:first-child { page-break-before: avoid; padding-top: 0; }
         h1 { text-align: center; }
         h2 { font-size: 20px; border-bottom: 1px solid #ccc; padding-bottom: 5px; margin-bottom: 0; }
-        p.supervisor { font-size: 16px; color: #555; margin-top: 5px; }
+        p.supervisor { font-size: 16px; color: #555; margin-top: 5px; margin-bottom: 0; }
         .desk-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-top: 20px; }
         .desk-card { border: 1px solid #ccc; border-radius: 8px; padding: 10px; break-inside: avoid; }
         .desk-title { font-weight: bold; font-size: 14px; margin-bottom: 8px; }
@@ -172,6 +172,9 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ seatingChart, classroom
         content += `<h2>${classroom.name}</h2>`;
         if (classroom.supervisor) {
           content += `<p class="supervisor">Supervisor: ${classroom.supervisor}</p>`;
+        }
+        if (classroom.supervisor2) {
+            content += `<p class="supervisor">Supervisor 2: ${classroom.supervisor2}</p>`;
         }
         content += `<div class="desk-grid">`;
         
@@ -235,7 +238,7 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ seatingChart, classroom
         h2 { font-size: 16px; border-bottom: 1px solid #ccc; padding-bottom: 5px; margin-bottom: 0; }
         h3 { font-size: 14px; margin-bottom: 5px; margin-top: 15px; }
         ul { margin: 0; padding-left: 20px;}
-        p.supervisor { font-size: 12px; color: #555; margin-top: 5px; }
+        p.supervisor { font-size: 12px; color: #555; margin-top: 5px; margin-bottom: 0; }
         table { width: 100%; border-collapse: collapse; margin-top: 15px; }
         th, td { border: 1px solid #ddd; padding: 4px; text-align: left; vertical-align: middle; }
         th { background-color: #f2f2f2; text-align: left; }
@@ -245,12 +248,13 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ seatingChart, classroom
         .footer {
             margin-top: auto;
             border-top: 1px solid #000;
-            padding-top: 5px;
+            padding-top: 10px;
             display: flex;
-            justify-content: space-between;
-            align-items: baseline;
+            justify-content: space-around;
+            text-align: center;
             font-size: 10px;
         }
+        .footer p { margin: 0; }
         .summary-container {
             column-count: 2;
             column-gap: 40px;
@@ -330,7 +334,12 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ seatingChart, classroom
         content += `<div class="page">`;
         content += `<div class="page-content">`
         content += `<h2>Classroom: ${classroom.name}</h2>`;
-        content += `<p class="supervisor">Supervisor: ${classroom.supervisor || 'N/A'}</p>`;
+        if (classroom.supervisor) {
+          content += `<p class="supervisor">Supervisor: ${classroom.supervisor}</p>`;
+        }
+        if (classroom.supervisor2) {
+            content += `<p class="supervisor">Supervisor 2: ${classroom.supervisor2}</p>`;
+        }
         
         content += `<table><thead><tr>
             <th style="width: 5%;">#</th>
@@ -372,8 +381,16 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ seatingChart, classroom
         content += `</div>`; // end page-content
 
         content += `<div class="footer">
-            <span>Supervisor: ${classroom.supervisor || 'N/A'}</span>
-            <span>Supervisor Signature: _________________________</span>
+            <div>
+                <p style="margin-bottom: 15px;">Supervisor Signature: _________________________</p>
+                <p>(${classroom.supervisor || 'N/A'})</p>
+            </div>
+            ${classroom.supervisor2 ? `
+            <div>
+                <p style="margin-bottom: 15px;">Supervisor Signature: _________________________</p>
+                <p>(${classroom.supervisor2})</p>
+            </div>
+            ` : ''}
         </div>`;
 
         content += `</div>`; // end page
@@ -430,6 +447,7 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ seatingChart, classroom
                         <div>
                             <h3 className="text-xl font-bold text-indigo-700">{classroom.name}</h3>
                             {classroom.supervisor && <p className="text-sm text-slate-500 mt-1">Supervisor: {classroom.supervisor}</p>}
+                            {classroom.supervisor2 && <p className="text-sm text-slate-500">Supervisor 2: {classroom.supervisor2}</p>}
                         </div>
                         <div className="flex items-center gap-2 text-slate-600 bg-slate-100 px-3 py-1 rounded-full mt-1">
                             <UserGroupIcon />
