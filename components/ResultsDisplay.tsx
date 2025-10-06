@@ -1,12 +1,11 @@
-import React, { useState } from 'react';
+import React, { useMemo } from 'react';
 import { Classroom, SeatingChart, Student } from '../types';
 import { UserGroupIcon } from './icons/UserGroupIcon';
 import { PrintIcon } from './icons/PrintIcon';
-import { RefreshIcon } from './icons/RefreshIcon';
+import { ShuffleIcon } from './icons/ShuffleIcon';
 
 interface ResultsDisplayProps {
   seatingChart: SeatingChart;
-  setSeatingChart: React.Dispatch<React.SetStateAction<SeatingChart | null>>;
   classrooms: Classroom[];
   handleRerandomize: (classroomId: string) => void;
 }
@@ -77,7 +76,29 @@ const DeskCard: React.FC<{
 }
 
 
-const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ seatingChart, setSeatingChart, classrooms, handleRerandomize }) => {
+const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ seatingChart, classrooms, handleRerandomize }) => {
+
+  const conflictSummary = useMemo(() => {
+    const conflicts: Record<string, { id: string; types: string[] }> = {};
+    classrooms.forEach(classroom => {
+        const deskConflicts = new Set<string>();
+        seatingChart[classroom.id]?.forEach(desk => {
+            const [student1, student2] = desk.students;
+            if (student1 && student2) {
+                if (student1.class === student2.class) {
+                    deskConflicts.add('Same Class');
+                }
+                if (getGradeLevel(student1.class) === getGradeLevel(student2.class)) {
+                    deskConflicts.add('Same Grade Level');
+                }
+            }
+        });
+        if (deskConflicts.size > 0) {
+            conflicts[classroom.name] = { id: classroom.id, types: Array.from(deskConflicts).sort() };
+        }
+    });
+    return conflicts;
+  }, [seatingChart, classrooms]);
 
   const handlePrintStudentList = () => {
     const printWindow = window.open('', '_blank');
@@ -436,6 +457,8 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ seatingChart, setSeatin
     printWindow.print();
   };
 
+  const hasConflicts = Object.keys(conflictSummary).length > 0;
+
   return (
     <div className="bg-white p-6 rounded-2xl shadow-lg">
       <div className="flex flex-wrap justify-between items-center border-b pb-3 mb-4 gap-2">
@@ -467,6 +490,31 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ seatingChart, setSeatin
             </button>
         </div>
       </div>
+
+      {hasConflicts && (
+        <div className="bg-amber-50 border-l-4 border-amber-400 p-4 rounded-r-lg my-6">
+          <h3 className="font-bold text-amber-800">Conflict Summary</h3>
+          <p className="text-sm text-amber-700 mt-1">
+            The following classrooms have seating conflicts. Click a classroom to re-randomize it.
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {/* FIX: Explicitly type conflictInfo to resolve properties on 'unknown' type. */}
+            {Object.entries(conflictSummary).map(([classroomName, conflictInfo]) => {
+              const info = conflictInfo as { id: string; types: string[] };
+              return (
+                <button
+                  key={info.id}
+                  onClick={() => handleRerandomize(info.id)}
+                  className="px-3 py-1 bg-amber-200 text-amber-900 font-semibold rounded-full hover:bg-amber-300 transition-colors text-sm"
+                >
+                  {classroomName}: <span className="font-normal">{info.types.join(', ')}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       <div className="space-y-8 mt-6">
         {classrooms.map(classroom => {
             const desks = seatingChart[classroom.id];
@@ -487,7 +535,7 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ seatingChart, setSeatin
                                 className="inline-flex items-center gap-2 px-3 py-1 bg-slate-100 text-slate-700 font-medium rounded-md hover:bg-slate-200 transition-colors text-sm"
                                 aria-label={`Re-randomize classroom ${classroom.name}`}
                             >
-                                <RefreshIcon />
+                                <ShuffleIcon />
                                 Re-randomize
                             </button>
                             <div className="flex items-center gap-2 text-slate-600 bg-slate-100 px-3 py-1 rounded-full mt-1">
