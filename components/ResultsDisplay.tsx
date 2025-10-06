@@ -231,12 +231,17 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ seatingChart, classroom
         .page-content {
            flex-grow: 1;
         }
-        h1 { text-align: center; font-size: 18px; }
+        h1 { text-align: center; font-size: 18px; margin-bottom: 20px; }
         h2 { font-size: 16px; border-bottom: 1px solid #ccc; padding-bottom: 5px; margin-bottom: 0; }
+        h3 { font-size: 14px; margin-bottom: 5px; margin-top: 15px; }
+        ul { margin: 0; padding-left: 20px;}
         p.supervisor { font-size: 12px; color: #555; margin-top: 5px; }
         table { width: 100%; border-collapse: collapse; margin-top: 15px; }
         th, td { border: 1px solid #ddd; padding: 4px; text-align: left; vertical-align: middle; }
         th { background-color: #f2f2f2; text-align: left; }
+        .grade-summary { margin-top: 20px; border-top: 1px solid #ccc; padding-top: 10px; font-size: 10px; }
+        .grade-summary h4 { margin: 0 0 5px 0; font-size: 11px; }
+        .grade-summary ul { list-style-position: inside; padding-left: 0; margin: 0; }
         .footer {
             margin-top: auto;
             border-top: 1px solid #000;
@@ -246,8 +251,63 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ seatingChart, classroom
             align-items: baseline;
             font-size: 10px;
         }
+        .summary-container {
+            column-count: 2;
+            column-gap: 40px;
+            margin-top: 20px;
+        }
+        .summary-classroom {
+            break-inside: avoid-column;
+            padding-bottom: 15px;
+        }
+        .summary-classroom h3 {
+            margin-top: 0;
+        }
     </style></head><body>`;
+
+    // --- Start: Calculate Summaries ---
+    const allGradeSummaries: Record<string, Record<string, number>> = {};
+    classrooms.forEach(classroom => {
+        const desks = seatingChart[classroom.id];
+        if (!desks) return;
+        const gradeSummary: Record<string, number> = {};
+        desks.forEach(desk => {
+            desk.students.forEach(student => {
+                if (student) {
+                    const grade = getGradeLevel(student.class);
+                    gradeSummary[grade] = (gradeSummary[grade] || 0) + 1;
+                }
+            });
+        });
+        allGradeSummaries[classroom.id] = gradeSummary;
+    });
+    // --- End: Calculate Summaries ---
+
     content += `<h1>Supervisor Reports</h1>`;
+    
+    // --- Start: Add Summary Page ---
+    content += `<div class="page"><div class="page-content"><h2>Overall Grade Distribution Summary</h2>`;
+    content += `<div class="summary-container">`;
+    classrooms.forEach(classroom => {
+        if (!seatingChart[classroom.id]) return;
+        content += `<div class="summary-classroom">`;
+        content += `<h3>Classroom: ${classroom.name}</h3>`;
+        const summary = allGradeSummaries[classroom.id];
+        if (summary && Object.keys(summary).length > 0) {
+            content += '<ul>';
+            Object.keys(summary).sort((a,b) => a.localeCompare(b, undefined, {numeric: true})).forEach(grade => {
+                content += `<li>Grade ${grade}: ${summary[grade]} students</li>`;
+            });
+            content += '</ul>';
+        } else {
+            content += '<p>No students assigned.</p>';
+        }
+        content += '</div>'; // summary-classroom
+    });
+    content += '</div>'; // summary-container
+    content += `</div></div>`;
+    // --- End: Add Summary Page ---
+
 
     classrooms.forEach(classroom => {
         const desks = seatingChart[classroom.id];
@@ -277,9 +337,9 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ seatingChart, classroom
             <th>First Name</th>
             <th>Last Name</th>
             <th>Class</th>
-            <th style="width: 10%;">School ID</th>
+            <th style="width: 15%;">School ID</th>
             <th style="width: 10%;">Variant</th>
-            <th style="width: 15%;">Student ID</th>
+            <th style="width: 10%;">Student ID</th>
             <th style="width: 20%;">Signature</th>
             </tr></thead><tbody>`;
         
@@ -289,7 +349,7 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ seatingChart, classroom
                 <td>${student.firstName}</td>
                 <td>${student.lastName}</td>
                 <td>${student.class}</td>
-                <td></td>
+                <td>${student.schoolId || ''}</td>
                 <td></td>
                 <td>${student.studentId || ''}</td>
                 <td></td>
@@ -297,6 +357,18 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ seatingChart, classroom
         });
         
         content += `</tbody></table>`;
+        
+        // --- Start: Add per-page summary ---
+        const classroomSummary = allGradeSummaries[classroom.id];
+        if (classroomSummary && Object.keys(classroomSummary).length > 0) {
+            content += `<div class="grade-summary"><h4>Grade Summary:</h4><ul>`;
+            Object.keys(classroomSummary).sort((a,b) => a.localeCompare(b, undefined, {numeric: true})).forEach(grade => {
+                content += `<li>Grade ${grade}: ${classroomSummary[grade]} students</li>`;
+            });
+            content += `</ul></div>`;
+        }
+        // --- End: Add per-page summary ---
+        
         content += `</div>`; // end page-content
 
         content += `<div class="footer">

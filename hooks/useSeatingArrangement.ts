@@ -55,7 +55,18 @@ export const useSeatingArrangement = () => {
                     const desk = newSeatingChart[classroom.id]?.[deskIndex];
                     if (!desk) continue;
                     
-                    const student1 = studentQueue.shift()!;
+                    const prevDesk = newSeatingChart[classroom.id]?.[deskIndex - 1];
+                    const prevDeskGrades = new Set<string>();
+                    if (prevDesk) {
+                        prevDesk.students.forEach(s => {
+                            if (s) prevDeskGrades.add(getGradeLevel(s.class));
+                        });
+                    }
+
+                    let student1Index = studentQueue.findIndex(s => !prevDeskGrades.has(getGradeLevel(s.class)));
+                    if (student1Index === -1) student1Index = 0; // Fallback
+
+                    const student1 = studentQueue.splice(student1Index, 1)[0];
                     desk.students[0] = student1;
             
                     if (studentQueue.length === 0) break;
@@ -63,7 +74,9 @@ export const useSeatingArrangement = () => {
                     const student1Grade = getGradeLevel(student1.class);
                     let partnerIndex = -1;
             
-                    partnerIndex = studentQueue.findIndex(s => s.class !== student1.class && s.lastName !== student1.lastName && getGradeLevel(s.class) !== student1Grade);
+                    // Prioritize new rule: avoid previous desk grades
+                    partnerIndex = studentQueue.findIndex(s => s.class !== student1.class && s.lastName !== student1.lastName && getGradeLevel(s.class) !== student1Grade && !prevDeskGrades.has(getGradeLevel(s.class)));
+                    if (partnerIndex === -1) partnerIndex = studentQueue.findIndex(s => s.class !== student1.class && s.lastName !== student1.lastName && getGradeLevel(s.class) !== student1Grade);
                     if (partnerIndex === -1) partnerIndex = studentQueue.findIndex(s => s.class !== student1.class && s.lastName !== student1.lastName);
                     if (partnerIndex === -1) partnerIndex = studentQueue.findIndex(s => s.class !== student1.class && getGradeLevel(s.class) !== student1Grade);
                     if (partnerIndex === -1) partnerIndex = studentQueue.findIndex(s => s.class !== student1.class);
@@ -89,28 +102,32 @@ export const useSeatingArrangement = () => {
                     if (maleQueue.length === 0 && femaleQueue.length === 0) break;
 
                     const desk = newSeatingChart[classroom.id]?.[deskIndex];
-                    if (!desk || desk.students[0]) continue; // Skip if desk doesn't exist or is already partially filled in a previous classroom iteration
+                    if (!desk || desk.students[0]) continue; // Skip if desk doesn't exist or is already partially filled
 
-                    // Prioritize the longer queue to ensure even distribution of groups
-                    const queueToUse = maleQueue.length >= femaleQueue.length ? maleQueue : femaleQueue;
-                    if (queueToUse.length === 0) { // If longer queue is empty, try the other
-                        const otherQueue = queueToUse === maleQueue ? femaleQueue : maleQueue;
-                        if (otherQueue.length === 0) continue; // Both are empty
-                         const student1 = otherQueue.shift()!;
-                         desk.students[0] = student1;
-                         // No need to look for partner, as the queue was empty or had 1
-                         continue;
+                    const prevDesk = newSeatingChart[classroom.id]?.[deskIndex - 1];
+                    const prevDeskGrades = new Set<string>();
+                    if (prevDesk) {
+                        prevDesk.students.forEach(s => {
+                            if (s) prevDeskGrades.add(getGradeLevel(s.class));
+                        });
                     }
+                    
+                    const queueToUse = maleQueue.length >= femaleQueue.length ? maleQueue : femaleQueue;
+                    if (queueToUse.length === 0) continue;
 
-                    const student1 = queueToUse.shift()!;
+                    let student1Index = queueToUse.findIndex(s => !prevDeskGrades.has(getGradeLevel(s.class)));
+                    if (student1Index === -1) student1Index = 0; // Fallback
+                    
+                    const student1 = queueToUse.splice(student1Index, 1)[0];
                     desk.students[0] = student1;
 
                     if (queueToUse.length > 0) {
                         const student1Grade = getGradeLevel(student1.class);
                         let partnerIndex = -1;
                         
-                        // Find a partner from the SAME gender queue
-                        partnerIndex = queueToUse.findIndex(s => s.class !== student1.class && s.lastName !== student1.lastName && getGradeLevel(s.class) !== student1Grade);
+                        // Find a partner from the SAME gender queue, prioritizing new rule
+                        partnerIndex = queueToUse.findIndex(s => s.class !== student1.class && s.lastName !== student1.lastName && getGradeLevel(s.class) !== student1Grade && !prevDeskGrades.has(getGradeLevel(s.class)));
+                        if (partnerIndex === -1) partnerIndex = queueToUse.findIndex(s => s.class !== student1.class && s.lastName !== student1.lastName && getGradeLevel(s.class) !== student1Grade);
                         if (partnerIndex === -1) partnerIndex = queueToUse.findIndex(s => s.class !== student1.class && s.lastName !== student1.lastName);
                         if (partnerIndex === -1) partnerIndex = queueToUse.findIndex(s => s.class !== student1.class && getGradeLevel(s.class) !== student1Grade);
                         if (partnerIndex === -1) partnerIndex = queueToUse.findIndex(s => s.class !== student1.class);

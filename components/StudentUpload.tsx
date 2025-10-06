@@ -65,6 +65,7 @@ const StudentUpload: React.FC<StudentUploadProps> = ({ onStudentsUpload, student
             lastName: row['last name'] || '',
             class: row['class'] || '',
             studentId: row['student id'] || row['id number'] || '',
+            schoolId: row['school id'] || '',
             gender: row['gender'] || '',
           })).filter(s => s.firstName.trim() !== '' && s.lastName.trim() !== '' && s.class.trim() !== '');
 
@@ -95,7 +96,7 @@ const StudentUpload: React.FC<StudentUploadProps> = ({ onStudentsUpload, student
     <div className="p-4 border border-slate-200 rounded-lg h-full flex flex-col justify-between">
       <div>
         <h3 className="text-xl font-semibold text-slate-700 mb-3">2. Upload Student List</h3>
-        <p className="text-sm text-slate-500 mb-4">Upload a .csv file with columns: "first name", "last name", "class". Optional: "student id", "gender" (M/F).</p>
+        <p className="text-sm text-slate-500 mb-4">Upload a .csv file with columns: "first name", "last name", "class". Optional: "student id", "school id", "gender" (M/F).</p>
         
         <input
           type="file"
