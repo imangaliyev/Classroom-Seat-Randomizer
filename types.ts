@@ -4,6 +4,7 @@ export interface Student {
   lastName: string;
   class: string;
   studentId?: string;
+  gender?: string;
 }
 
 export interface Classroom {

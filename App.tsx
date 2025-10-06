@@ -13,17 +13,26 @@ const App: React.FC = () => {
   const [students, setStudents] = useState<Student[]>([]);
   const { seatingChart, error, isLoading, generateSeatingChart } = useSeatingArrangement();
 
-  const handleStudentsUpload = (uploadedStudents: Student[], uploadError: string | null) => {
+  const [showGenderOption, setShowGenderOption] = useState(false);
+  const [separateGenders, setSeparateGenders] = useState(false);
+
+
+  const handleStudentsUpload = (uploadedStudents: Student[], uploadError: string | null, hasMixedGenders: boolean) => {
     if (uploadError) {
       alert(uploadError);
       setStudents([]);
+      setShowGenderOption(false);
     } else {
       setStudents(uploadedStudents);
+      setShowGenderOption(hasMixedGenders);
+    }
+    if (!hasMixedGenders) {
+        setSeparateGenders(false);
     }
   };
 
   const handleRandomize = () => {
-    generateSeatingChart(students, classrooms);
+    generateSeatingChart(students, classrooms, separateGenders);
   };
 
   const totalCapacity = useMemo(() => {
@@ -49,7 +58,7 @@ const App: React.FC = () => {
             </div>
           </div>
 
-          <div className="text-center mb-8">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-8">
             <button
               onClick={handleRandomize}
               disabled={!canRandomize || isLoading}
@@ -57,7 +66,7 @@ const App: React.FC = () => {
             >
               {isLoading ? (
                 <>
-                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w.org/2000/svg" fill="none" viewBox="0 0 24 24">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                   </svg>
@@ -70,6 +79,20 @@ const App: React.FC = () => {
                 </>
               )}
             </button>
+             {showGenderOption && (
+                <div className="flex items-center bg-white p-3 rounded-lg shadow-md border border-slate-200">
+                    <input
+                        type="checkbox"
+                        id="separate-genders"
+                        checked={separateGenders}
+                        onChange={(e) => setSeparateGenders(e.target.checked)}
+                        className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                    />
+                    <label htmlFor="separate-genders" className="ml-2 block text-sm font-medium text-slate-700">
+                        Separate genders
+                    </label>
+                </div>
+            )}
           </div>
 
           {error && (
