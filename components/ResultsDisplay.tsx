@@ -8,6 +8,7 @@ interface ResultsDisplayProps {
   seatingChart: SeatingChart;
   classrooms: Classroom[];
   handleRerandomize: (classroomId: string) => void;
+  separateGenders: boolean;
 }
 
 const getGradeLevel = (className: string): string => {
@@ -16,8 +17,11 @@ const getGradeLevel = (className: string): string => {
 };
 
 const StudentSlot: React.FC<{ student: Student | null }> = ({ student }) => {
+    const gender = student?.gender?.toUpperCase();
+    const bgColor = gender === 'M' ? 'bg-blue-50' : gender === 'F' ? 'bg-pink-50' : 'bg-white';
+    
     return (
-        <div className="w-full p-1.5 rounded text-sm truncate bg-white">
+        <div className={`w-full p-1.5 rounded text-sm truncate ${bgColor}`}>
             {student ? (
                 <div>
                     <p className="font-medium text-slate-800">{student.firstName} {student.lastName}</p>
@@ -34,7 +38,8 @@ const StudentSlot: React.FC<{ student: Student | null }> = ({ student }) => {
 const DeskCard: React.FC<{
     desk: SeatingChart[string][0];
     deskNumber: number;
-}> = ({ desk, deskNumber }) => {
+    separateGenders: boolean;
+}> = ({ desk, deskNumber, separateGenders }) => {
     const student1 = desk.students[0];
     const student2 = desk.students[1];
     
@@ -43,11 +48,15 @@ const DeskCard: React.FC<{
         const sameClass = student1.class === student2.class;
         const sameLastName = student1.lastName === student2.lastName;
         const sameGrade = getGradeLevel(student1.class) === getGradeLevel(student2.class);
+        const mixedGender = separateGenders && student1.gender?.toUpperCase() !== student2.gender?.toUpperCase();
 
         if (sameClass) {
             conflictMessages.push('Same Class');
         } else if (sameGrade) { 
             conflictMessages.push('Same Grade Level');
+        }
+        if (mixedGender) {
+            conflictMessages.push('Mixed Gender');
         }
         if (sameLastName) {
             conflictMessages.push('Same Last Name');
@@ -58,7 +67,7 @@ const DeskCard: React.FC<{
     const conflictText = conflictMessages.join(', ');
 
     return (
-        <div className={`p-3 rounded-lg shadow-sm ${hasConflict ? 'bg-amber-100 border border-amber-400' : 'bg-slate-100'}`}>
+        <div className={`p-3 rounded-lg shadow-sm ${hasConflict ? 'bg-amber-100 border border-amber-400' : 'bg-white border border-slate-200'}`}>
             <p className="font-bold text-slate-600 text-sm mb-2">Desk {deskNumber}</p>
             <div className="space-y-1">
                 <div className="flex items-center">
@@ -76,7 +85,7 @@ const DeskCard: React.FC<{
 }
 
 
-const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ seatingChart, classrooms, handleRerandomize }) => {
+const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ seatingChart, classrooms, handleRerandomize, separateGenders }) => {
 
   const conflictSummary = useMemo(() => {
     const conflicts: Record<string, { id: string; types: string[] }> = {};
@@ -91,6 +100,9 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ seatingChart, classroom
                 if (getGradeLevel(student1.class) === getGradeLevel(student2.class)) {
                     deskConflicts.add('Same Grade Level');
                 }
+                if (separateGenders && student1.gender?.toUpperCase() !== student2.gender?.toUpperCase()) {
+                    deskConflicts.add('Mixed Gender');
+                }
             }
         });
         if (deskConflicts.size > 0) {
@@ -98,7 +110,7 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ seatingChart, classroom
         }
     });
     return conflicts;
-  }, [seatingChart, classrooms]);
+  }, [seatingChart, classrooms, separateGenders]);
 
   const handlePrintStudentList = () => {
     const printWindow = window.open('', '_blank');
@@ -219,12 +231,19 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ seatingChart, classroom
         desks.forEach((desk, index) => {
             const student1 = desk.students[0];
             const student2 = desk.students[1];
+
+            const student1Gender = student1?.gender?.toUpperCase();
+            const student1BgColor = student1Gender === 'M' ? '#eff6ff' : student1Gender === 'F' ? '#fdf2f8' : '#f9f9f9';
+            
+            const student2Gender = student2?.gender?.toUpperCase();
+            const student2BgColor = student2Gender === 'M' ? '#eff6ff' : student2Gender === 'F' ? '#fdf2f8' : '#f9f9f9';
+
             content += `<div class="desk-card">
                 <p class="desk-title">Desk ${index + 1}</p>
-                <div class="student-slot">
+                <div class="student-slot" style="background-color: ${student1BgColor};">
                     ${student1 ? `<p class="student-name">${student1.firstName} ${student1.lastName}</p><p class="student-class">${student1.class}</p>` : `<p class="empty">Empty</p>`}
                 </div>
-                <div class="student-slot">
+                <div class="student-slot" style="background-color: ${student2BgColor};">
                     ${student2 ? `<p class="student-name">${student2.firstName} ${student2.lastName}</p><p class="student-class">${student2.class}</p>` : `<p class="empty">Empty</p>`}
                 </div>
             </div>`;
@@ -551,6 +570,7 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ seatingChart, classroom
                              key={desk.id}
                              desk={desk}
                              deskNumber={index + 1}
+                             separateGenders={separateGenders}
                            />
                         ))}
                     </div>
