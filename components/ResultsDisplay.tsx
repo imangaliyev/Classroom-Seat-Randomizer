@@ -276,8 +276,9 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ seatingChart, classroom
             <th>First Name</th>
             <th>Last Name</th>
             <th>Class</th>
+            <th style="width: 10%;">School ID</th>
             <th style="width: 10%;">Variant</th>
-            <th style="width: 20%;">Student ID</th>
+            <th style="width: 15%;">Student ID</th>
             <th style="width: 25%;">Signature</th>
             </tr></thead><tbody>`;
         
@@ -286,6 +287,7 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ seatingChart, classroom
                 <td>${student.firstName}</td>
                 <td>${student.lastName}</td>
                 <td>${student.class}</td>
+                <td></td>
                 <td></td>
                 <td>${student.studentId || ''}</td>
                 <td></td>
