@@ -4,14 +4,14 @@ import ClassroomSetup from './components/ClassroomSetup';
 import StudentUpload from './components/StudentUpload';
 import ResultsDisplay from './components/ResultsDisplay';
 import { useSeatingArrangement } from './hooks/useSeatingArrangement';
-import { ShuffleIcon } from './components/icons/ShuffleIcon';
+import { RefreshIcon } from './components/icons/RefreshIcon';
 
 const App: React.FC = () => {
   const [classrooms, setClassrooms] = useState<Classroom[]>([
     { id: `classroom-${Date.now()}`, name: 'Room 101', capacity: 20, supervisor: '' },
   ]);
   const [students, setStudents] = useState<Student[]>([]);
-  const { seatingChart, setSeatingChart, error, isLoading, generateSeatingChart } = useSeatingArrangement();
+  const { seatingChart, setSeatingChart, error, isLoading, generateSeatingChart, rerandomizeClassroom } = useSeatingArrangement();
 
   const [showGenderOption, setShowGenderOption] = useState(false);
   const [separateGenders, setSeparateGenders] = useState(false);
@@ -33,6 +33,10 @@ const App: React.FC = () => {
 
   const handleRandomize = () => {
     generateSeatingChart(students, classrooms, separateGenders);
+  };
+  
+  const handleRerandomizeClassroom = (classroomId: string) => {
+    rerandomizeClassroom(classroomId, classrooms, separateGenders);
   };
 
   const totalCapacity = useMemo(() => {
@@ -74,7 +78,7 @@ const App: React.FC = () => {
                 </>
               ) : (
                 <>
-                  <ShuffleIcon />
+                  <RefreshIcon />
                   Randomize Seating
                 </>
               )}
@@ -102,7 +106,7 @@ const App: React.FC = () => {
             </div>
           )}
 
-          {seatingChart && <ResultsDisplay seatingChart={seatingChart} setSeatingChart={setSeatingChart} classrooms={classrooms} />}
+          {seatingChart && <ResultsDisplay seatingChart={seatingChart} setSeatingChart={setSeatingChart} classrooms={classrooms} handleRerandomize={handleRerandomizeClassroom} />}
         </main>
         
         <footer className="text-center mt-12 mb-4">

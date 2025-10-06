@@ -2,11 +2,13 @@ import React, { useState } from 'react';
 import { Classroom, SeatingChart, Student } from '../types';
 import { UserGroupIcon } from './icons/UserGroupIcon';
 import { PrintIcon } from './icons/PrintIcon';
+import { RefreshIcon } from './icons/RefreshIcon';
 
 interface ResultsDisplayProps {
   seatingChart: SeatingChart;
   setSeatingChart: React.Dispatch<React.SetStateAction<SeatingChart | null>>;
   classrooms: Classroom[];
+  handleRerandomize: (classroomId: string) => void;
 }
 
 const getGradeLevel = (className: string): string => {
@@ -14,67 +16,16 @@ const getGradeLevel = (className: string): string => {
   return match ? match[0] : className;
 };
 
-const StudentSlot: React.FC<{
-    student: Student | null;
-    classroomId: string;
-    deskId: string;
-    slotIndex: 0 | 1;
-    onDrop: (e: React.DragEvent, targetClassroomId: string, targetDeskId: string, targetSlotIndex: 0 | 1) => void;
-    onDragStart: (e: React.DragEvent, student: Student, classroomId: string, deskId: string, slotIndex: 0 | 1) => void;
-}> = ({ student, classroomId, deskId, slotIndex, onDrop, onDragStart }) => {
-    const [isDragOver, setIsDragOver] = useState(false);
-    const [isDragging, setIsDragging] = useState(false);
-
-    const handleDragStart = (e: React.DragEvent) => {
-        if (student) {
-            setIsDragging(true);
-            onDragStart(e, student, classroomId, deskId, slotIndex);
-        }
-    };
-
-    const handleDragEnd = (e: React.DragEvent) => {
-        setIsDragging(false);
-    };
-
-    const handleDrop = (e: React.DragEvent) => {
-        setIsDragOver(false);
-        onDrop(e, classroomId, deskId, slotIndex);
-    };
-
-    const handleDragOver = (e: React.DragEvent) => {
-        e.preventDefault();
-        e.dataTransfer.dropEffect = 'move';
-    };
-
-    const handleDragEnter = (e: React.DragEvent) => {
-        e.preventDefault();
-        setIsDragOver(true);
-    };
-
-    const handleDragLeave = (e: React.DragEvent) => {
-        setIsDragOver(false);
-    };
-
+const StudentSlot: React.FC<{ student: Student | null }> = ({ student }) => {
     return (
-        <div
-            onDrop={handleDrop}
-            onDragOver={handleDragOver}
-            onDragEnter={handleDragEnter}
-            onDragLeave={handleDragLeave}
-            className={`w-full p-1.5 rounded text-sm truncate transition-colors ${isDragOver ? 'bg-indigo-200 ring-2 ring-indigo-500' : 'bg-white'}`}
-        >
+        <div className="w-full p-1.5 rounded text-sm truncate bg-white">
             {student ? (
-                <div
-                    draggable="true"
-                    onDragStart={handleDragStart}
-                    onDragEnd={handleDragEnd}
-                    className={`cursor-move ${isDragging ? 'opacity-40' : ''}`}
-                >
+                <div>
                     <p className="font-medium text-slate-800">{student.firstName} {student.lastName}</p>
                     <p className="text-xs text-slate-500">{student.class}</p>
                 </div>
             ) : (
-                <p className="text-slate-400 h-[34px] flex items-center">Empty</p> // Match height of student card
+                <p className="text-slate-400 h-[34px] flex items-center">Empty</p>
             )}
         </div>
     );
@@ -84,10 +35,7 @@ const StudentSlot: React.FC<{
 const DeskCard: React.FC<{
     desk: SeatingChart[string][0];
     deskNumber: number;
-    classroomId: string;
-    onDrop: (e: React.DragEvent, targetClassroomId: string, targetDeskId: string, targetSlotIndex: 0 | 1) => void;
-    onDragStart: (e: React.DragEvent, student: Student, classroomId: string, deskId: string, slotIndex: 0 | 1) => void;
-}> = ({ desk, deskNumber, classroomId, onDrop, onDragStart }) => {
+}> = ({ desk, deskNumber }) => {
     const student1 = desk.students[0];
     const student2 = desk.students[1];
     
@@ -116,25 +64,11 @@ const DeskCard: React.FC<{
             <div className="space-y-1">
                 <div className="flex items-center">
                     <span className="w-4 text-center font-mono text-slate-500 text-xs mr-2">1</span>
-                    <StudentSlot
-                        student={student1}
-                        classroomId={classroomId}
-                        deskId={desk.id}
-                        slotIndex={0}
-                        onDrop={onDrop}
-                        onDragStart={onDragStart}
-                    />
+                    <StudentSlot student={student1} />
                 </div>
                  <div className="flex items-center">
                     <span className="w-4 text-center font-mono text-slate-500 text-xs mr-2">2</span>
-                    <StudentSlot
-                        student={student2}
-                        classroomId={classroomId}
-                        deskId={desk.id}
-                        slotIndex={1}
-                        onDrop={onDrop}
-                        onDragStart={onDragStart}
-                    />
+                     <StudentSlot student={student2} />
                 </div>
             </div>
             {hasConflict && <p className="text-xs text-amber-700 mt-2 text-center font-medium">{conflictText}</p>}
@@ -143,51 +77,7 @@ const DeskCard: React.FC<{
 }
 
 
-const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ seatingChart, setSeatingChart, classrooms }) => {
-
-  const handleDragStart = (e: React.DragEvent, student: Student, classroomId: string, deskId: string, slotIndex: 0 | 1) => {
-    const data = {
-        studentId: student.id,
-        sourceClassroomId: classroomId,
-        sourceDeskId: deskId,
-        sourceSlotIndex: slotIndex,
-    };
-    // Use 'text/plain' for broader browser compatibility.
-    e.dataTransfer.setData('text/plain', JSON.stringify(data));
-    e.dataTransfer.effectAllowed = 'move';
-  };
-
-  const handleDrop = (e: React.DragEvent, targetClassroomId: string, targetDeskId: string, targetSlotIndex: 0 | 1) => {
-      e.preventDefault();
-      // Use 'text/plain' to retrieve the data.
-      const dataString = e.dataTransfer.getData('text/plain');
-      if (!dataString || !seatingChart) return;
-
-      const data = JSON.parse(dataString);
-      const { studentId, sourceClassroomId, sourceDeskId, sourceSlotIndex } = data;
-
-      if (sourceClassroomId === targetClassroomId && sourceDeskId === targetDeskId && sourceSlotIndex === targetSlotIndex) {
-          return;
-      }
-      
-      const newSeatingChart = JSON.parse(JSON.stringify(seatingChart));
-
-      const sourceDesk = newSeatingChart[sourceClassroomId]?.find((d: any) => d.id === sourceDeskId);
-      const targetDesk = newSeatingChart[targetClassroomId]?.find((d: any) => d.id === targetDeskId);
-      
-      if (!sourceDesk || !targetDesk) return;
-
-      const draggedStudent = sourceDesk.students[sourceSlotIndex];
-      if (!draggedStudent || draggedStudent.id !== studentId) return;
-
-      const targetStudent = targetDesk.students[targetSlotIndex];
-
-      // Swap students
-      targetDesk.students[targetSlotIndex] = draggedStudent;
-      sourceDesk.students[sourceSlotIndex] = targetStudent; // targetStudent can be null
-
-      setSeatingChart(newSeatingChart);
-  };
+const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ seatingChart, setSeatingChart, classrooms, handleRerandomize }) => {
 
   const handlePrintStudentList = () => {
     const printWindow = window.open('', '_blank');
@@ -196,7 +86,6 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ seatingChart, setSeatin
       return;
     }
 
-    // 1. Group students by their original class
     const studentsByOriginalClass: Record<string, { student: Student; classroomName: string; desk: string }[]> = {};
 
     classrooms.forEach(classroom => {
@@ -228,13 +117,11 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ seatingChart, setSeatin
     </style></head><body>`;
     content += `<h1>Student Placement List by Original Class</h1>`;
 
-    // 2. Create a sorted list of tables, one for each original class
     const originalClasses = Object.keys(studentsByOriginalClass).sort();
 
     originalClasses.forEach(className => {
       const studentEntries = studentsByOriginalClass[className];
       
-      // Sort students within the group alphabetically
       studentEntries.sort((a, b) => {
         if (a.student.lastName.localeCompare(b.student.lastName) !== 0) {
           return a.student.lastName.localeCompare(b.student.lastName);
@@ -497,7 +384,6 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ seatingChart, setSeatin
         
         content += `</tbody></table>`;
         
-        // --- Start: Add per-page summary ---
         const classroomSummary = allGradeSummaries[classroom.id];
         if (classroomSummary && Object.keys(classroomSummary).length > 0) {
             content += `<div class="grade-summary"><h4>Grade Summary:</h4><ul>`;
@@ -506,9 +392,8 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ seatingChart, setSeatin
             });
             content += `</ul></div>`;
         }
-        // --- End: Add per-page summary ---
         
-        content += `</div>`; // end page-content
+        content += `</div>`; 
 
         content += `<div class="footer">
             <div>
@@ -523,7 +408,7 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ seatingChart, setSeatin
             ` : ''}
         </div>`;
 
-        content += `</div>`; // end page
+        content += `</div>`;
     });
 
     content += `</body></html>`;
@@ -573,16 +458,27 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ seatingChart, setSeatin
 
             return (
                 <div key={classroom.id} className="p-4 border border-slate-200 rounded-lg">
-                    <div className="flex justify-between items-start mb-4">
+                    <div className="flex flex-wrap gap-2 justify-between items-start mb-4">
                         <div>
                             <h3 className="text-xl font-bold text-indigo-700">{classroom.name}</h3>
                             {classroom.supervisor && <p className="text-sm text-slate-500 mt-1">Supervisor: {classroom.supervisor}</p>}
                             {classroom.supervisor2 && <p className="text-sm text-slate-500">Supervisor 2: {classroom.supervisor2}</p>}
                         </div>
-                        <div className="flex items-center gap-2 text-slate-600 bg-slate-100 px-3 py-1 rounded-full mt-1">
-                            <UserGroupIcon />
-                            <span className="font-medium">{studentCount} Students</span>
+                        <div className='flex items-center gap-4'>
+                             <button
+                                onClick={() => handleRerandomize(classroom.id)}
+                                className="inline-flex items-center gap-2 px-3 py-1 bg-slate-100 text-slate-700 font-medium rounded-md hover:bg-slate-200 transition-colors text-sm"
+                                aria-label={`Re-randomize classroom ${classroom.name}`}
+                            >
+                                <RefreshIcon />
+                                Re-randomize
+                            </button>
+                            <div className="flex items-center gap-2 text-slate-600 bg-slate-100 px-3 py-1 rounded-full mt-1">
+                                <UserGroupIcon />
+                                <span className="font-medium">{studentCount} Students</span>
+                            </div>
                         </div>
+
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
                         {desks.map((desk, index) => (
@@ -590,9 +486,6 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ seatingChart, setSeatin
                              key={desk.id}
                              desk={desk}
                              deskNumber={index + 1}
-                             classroomId={classroom.id}
-                             onDrop={handleDrop}
-                             onDragStart={handleDragStart}
                            />
                         ))}
                     </div>

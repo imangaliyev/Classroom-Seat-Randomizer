@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { Student, Classroom, SeatingChart } from '../types';
+import { Student, Classroom, SeatingChart, Desk } from '../types';
 
 const getGradeLevel = (className: string): string => {
   const match = className.match(/^\d+/);
@@ -62,7 +62,6 @@ export const useSeatingArrangement = () => {
 
                   const MIN_ACCEPTABLE_SCORE = 8; // Score must at least indicate different grades
 
-                  // Calculate the total number of empty slots remaining across all classrooms
                   const getAvailableSlots = () => {
                       let slots = 0;
                       Object.values(newSeatingChart).forEach(desks => {
@@ -74,7 +73,6 @@ export const useSeatingArrangement = () => {
                       return slots;
                   };
 
-                  // Handle filling a completely empty desk
                   if (!desk.students[0] && !desk.students[1]) {
                       if (studentQueue.length < 2) {
                           if (studentQueue.length === 1) desk.students[0] = studentQueue.shift()!;
@@ -106,24 +104,19 @@ export const useSeatingArrangement = () => {
                       const availableSlots = getAvailableSlots();
 
                       if (bestPair.student1Index !== -1 && (bestPair.score >= MIN_ACCEPTABLE_SCORE || studentQueue.length > availableSlots)) {
-                          // Form a pair if the score is good OR if we're running out of slots
                           const student2 = studentQueue.splice(bestPair.student2Index, 1)[0];
                           const student1 = studentQueue.splice(bestPair.student1Index, 1)[0];
                           desk.students[0] = student1;
                           desk.students[1] = student2;
                       } else if (studentQueue.length > 0) {
-                          // Seat student alone because best pair is a conflict AND we have spare slots.
-                          // Place the first student from the highest-scoring (but still rejected) pair.
                           if (bestPair.student1Index !== -1) {
                               const studentToPlace = studentQueue.splice(bestPair.student1Index, 1)[0];
                               desk.students[0] = studentToPlace;
                           } else {
-                              // Fallback for when there's only one student left in the queue.
                               desk.students[0] = studentQueue.shift()!;
                           }
                       }
                   } 
-                  // Handle filling a half-empty desk
                   else if (desk.students[0] && !desk.students[1]) {
                       if (separateGenders && studentQueue.length > 0 && desk.students[0].gender?.toUpperCase() !== studentQueue[0].gender?.toUpperCase()) {
                           continue;
@@ -150,12 +143,9 @@ export const useSeatingArrangement = () => {
                       
                       if (bestPartner.index !== -1) {
                         const availableSlots = getAvailableSlots();
-                        // Forced to pair if remaining students are more than available slots.
-                        // We use >= because if queue=1 and slots=1, we must fill this slot.
                         if (bestPartner.score >= MIN_ACCEPTABLE_SCORE || studentQueue.length >= availableSlots) {
                            desk.students[1] = studentQueue.splice(bestPartner.index, 1)[0];
                         }
-                        // else, do nothing. Leave the desk half empty and let the student be placed in a better (empty) desk later.
                       }
                   }
               }
@@ -170,7 +160,6 @@ export const useSeatingArrangement = () => {
             const maleQueue = shuffledStudents.filter(s => s.gender?.toUpperCase() === 'M');
             const femaleQueue = shuffledStudents.filter(s => s.gender?.toUpperCase() === 'F');
             
-            // Process the larger group first to give them more initial placement options
             if (maleQueue.length >= femaleQueue.length) {
                 placeStudents(maleQueue);
                 placeStudents(femaleQueue);
@@ -185,5 +174,135 @@ export const useSeatingArrangement = () => {
     }, 50);
   }, []);
 
-  return { seatingChart, setSeatingChart, error, isLoading, generateSeatingChart };
+  const rerandomizeClassroom = useCallback((classroomId: string, classrooms: Classroom[], separateGenders: boolean) => {
+    setIsLoading(true);
+    setError(null);
+  
+    setTimeout(() => {
+      setSeatingChart(currentChart => {
+        if (!currentChart) {
+          setIsLoading(false);
+          return null;
+        }
+  
+        const newChart = JSON.parse(JSON.stringify(currentChart));
+        const classroomToUpdate = classrooms.find(c => c.id === classroomId);
+        if (!classroomToUpdate) {
+            setIsLoading(false);
+            return newChart;
+        }
+  
+        const studentsToRerandomize: Student[] = [];
+        newChart[classroomId]?.forEach((desk: Desk) => {
+          desk.students.forEach(student => {
+            if (student) studentsToRerandomize.push(student);
+          });
+        });
+  
+        if (studentsToRerandomize.length === 0) {
+            setIsLoading(false);
+            return newChart;
+        }
+  
+        const numDesks = Math.ceil((classroomToUpdate.capacity || 0) / 2);
+        const newDesksForClassroom: Desk[] = Array.from({ length: numDesks }, (_, i) => ({
+          id: `${classroomId}-desk-rerandomize-${i}`,
+          students: [null, null],
+        }));
+        newChart[classroomId] = newDesksForClassroom;
+  
+        const studentQueue = [...studentsToRerandomize].sort(() => Math.random() - 0.5);
+
+        // Localized placement logic for a single classroom
+        for (let deskIndex = 0; deskIndex < newDesksForClassroom.length; deskIndex++) {
+            if (studentQueue.length === 0) break;
+            const desk = newDesksForClassroom[deskIndex];
+
+            const prevDesk = newDesksForClassroom[deskIndex - 1];
+            const prevDeskGrades = new Set<string>();
+            if (prevDesk) {
+                prevDesk.students.forEach(s => { if (s) prevDeskGrades.add(getGradeLevel(s.class)); });
+            }
+
+            const MIN_ACCEPTABLE_SCORE = 8;
+            
+            const availableSlotsInClassroom = () => {
+                let slots = 0;
+                newDesksForClassroom.forEach(d => {
+                    if (!d.students[0]) slots++;
+                    if (!d.students[1]) slots++;
+                });
+                return slots;
+            };
+
+            if (studentQueue.length === 1) {
+                desk.students[0] = studentQueue.shift()!;
+                continue;
+            }
+            if (studentQueue.length > 1) {
+                let bestPair = { student1Index: -1, student2Index: -1, score: -1 };
+                for (let i = 0; i < studentQueue.length; i++) {
+                    for (let j = i + 1; j < studentQueue.length; j++) {
+                        const s1 = studentQueue[i];
+                        const s2 = studentQueue[j];
+                        let currentScore = 0;
+                        const s1Grade = getGradeLevel(s1.class);
+                        const s2Grade = getGradeLevel(s2.class);
+
+                        if (s1Grade !== s2Grade) currentScore += 8;
+                        if (s1.class !== s2.class) currentScore += 4;
+                        if (!prevDeskGrades.has(s1Grade)) currentScore += 2;
+                        if (!prevDeskGrades.has(s2Grade)) currentScore += 2;
+                        if (s1.lastName !== s2.lastName) currentScore += 1;
+                        if (separateGenders && s1.gender?.toUpperCase() !== s2.gender?.toUpperCase()) currentScore = -1; // Disqualify mixed gender pairs
+
+                        if (currentScore > bestPair.score) {
+                            bestPair = { student1Index: i, student2Index: j, score: currentScore };
+                        }
+                    }
+                }
+                
+                const availableSlots = availableSlotsInClassroom();
+                if (bestPair.student1Index !== -1 && (bestPair.score >= MIN_ACCEPTABLE_SCORE || studentQueue.length > availableSlots)) {
+                    const student2 = studentQueue.splice(bestPair.student2Index, 1)[0];
+                    const student1 = studentQueue.splice(bestPair.student1Index, 1)[0];
+                    desk.students[0] = student1;
+                    desk.students[1] = student2;
+                } else if (studentQueue.length > 0) {
+                    if (bestPair.student1Index !== -1) {
+                        desk.students[0] = studentQueue.splice(bestPair.student1Index, 1)[0];
+                    } else {
+                        desk.students[0] = studentQueue.shift()!;
+                    }
+                }
+            }
+        }
+        
+        // Handle any remaining students (e.g., if there aren't enough desks) by filling empty slots
+        if(studentQueue.length > 0) {
+            for (const desk of newDesksForClassroom) {
+                if(studentQueue.length === 0) break;
+                if (!desk.students[0]) {
+                    desk.students[0] = studentQueue.shift()!;
+                }
+                if(studentQueue.length === 0) break;
+                if (!desk.students[1]) {
+                    // Final gender check before pairing
+                    const s1 = desk.students[0];
+                    const s2 = studentQueue[0];
+                    if(s1 && !separateGenders || (separateGenders && s1.gender?.toUpperCase() === s2.gender?.toUpperCase())) {
+                        desk.students[1] = studentQueue.shift()!;
+                    }
+                }
+            }
+        }
+  
+        return newChart;
+      });
+      setIsLoading(false);
+    }, 50);
+  }, []);
+  
+
+  return { seatingChart, setSeatingChart, error, isLoading, generateSeatingChart, rerandomizeClassroom };
 };
