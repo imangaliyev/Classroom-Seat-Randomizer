@@ -11,7 +11,7 @@ const App: React.FC = () => {
     { id: `classroom-${Date.now()}`, name: 'Room 101', capacity: 20, supervisor: '' },
   ]);
   const [students, setStudents] = useState<Student[]>([]);
-  const { seatingChart, error, isLoading, generateSeatingChart } = useSeatingArrangement();
+  const { seatingChart, setSeatingChart, error, isLoading, generateSeatingChart } = useSeatingArrangement();
 
   const [showGenderOption, setShowGenderOption] = useState(false);
   const [separateGenders, setSeparateGenders] = useState(false);
@@ -102,7 +102,7 @@ const App: React.FC = () => {
             </div>
           )}
 
-          {seatingChart && <ResultsDisplay seatingChart={seatingChart} classrooms={classrooms} />}
+          {seatingChart && <ResultsDisplay seatingChart={seatingChart} setSeatingChart={setSeatingChart} classrooms={classrooms} />}
         </main>
         
         <footer className="text-center mt-12 mb-4">

@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Classroom, SeatingChart, Student } from '../types';
 import { UserGroupIcon } from './icons/UserGroupIcon';
 import { PrintIcon } from './icons/PrintIcon';
 
 interface ResultsDisplayProps {
   seatingChart: SeatingChart;
+  setSeatingChart: React.Dispatch<React.SetStateAction<SeatingChart | null>>;
   classrooms: Classroom[];
 }
 
@@ -13,7 +14,83 @@ const getGradeLevel = (className: string): string => {
   return match ? match[0] : className;
 };
 
-const DeskCard: React.FC<{ student1: Student | null; student2: Student | null; deskNumber: number }> = ({ student1, student2, deskNumber }) => {
+const StudentSlot: React.FC<{
+    student: Student | null;
+    classroomId: string;
+    deskId: string;
+    slotIndex: 0 | 1;
+    onDrop: (e: React.DragEvent, targetClassroomId: string, targetDeskId: string, targetSlotIndex: 0 | 1) => void;
+    onDragStart: (e: React.DragEvent, student: Student, classroomId: string, deskId: string, slotIndex: 0 | 1) => void;
+}> = ({ student, classroomId, deskId, slotIndex, onDrop, onDragStart }) => {
+    const [isDragOver, setIsDragOver] = useState(false);
+    const [isDragging, setIsDragging] = useState(false);
+
+    const handleDragStart = (e: React.DragEvent) => {
+        if (student) {
+            setIsDragging(true);
+            onDragStart(e, student, classroomId, deskId, slotIndex);
+        }
+    };
+
+    const handleDragEnd = (e: React.DragEvent) => {
+        setIsDragging(false);
+    };
+
+    const handleDrop = (e: React.DragEvent) => {
+        setIsDragOver(false);
+        onDrop(e, classroomId, deskId, slotIndex);
+    };
+
+    const handleDragOver = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+    };
+
+    const handleDragEnter = (e: React.DragEvent) => {
+        e.preventDefault();
+        setIsDragOver(true);
+    };
+
+    const handleDragLeave = (e: React.DragEvent) => {
+        setIsDragOver(false);
+    };
+
+    return (
+        <div
+            onDrop={handleDrop}
+            onDragOver={handleDragOver}
+            onDragEnter={handleDragEnter}
+            onDragLeave={handleDragLeave}
+            className={`w-full p-1.5 rounded text-sm truncate transition-colors ${isDragOver ? 'bg-indigo-200 ring-2 ring-indigo-500' : 'bg-white'}`}
+        >
+            {student ? (
+                <div
+                    draggable="true"
+                    onDragStart={handleDragStart}
+                    onDragEnd={handleDragEnd}
+                    className={`cursor-move ${isDragging ? 'opacity-40' : ''}`}
+                >
+                    <p className="font-medium text-slate-800">{student.firstName} {student.lastName}</p>
+                    <p className="text-xs text-slate-500">{student.class}</p>
+                </div>
+            ) : (
+                <p className="text-slate-400 h-[34px] flex items-center">Empty</p> // Match height of student card
+            )}
+        </div>
+    );
+};
+
+
+const DeskCard: React.FC<{
+    desk: SeatingChart[string][0];
+    deskNumber: number;
+    classroomId: string;
+    onDrop: (e: React.DragEvent, targetClassroomId: string, targetDeskId: string, targetSlotIndex: 0 | 1) => void;
+    onDragStart: (e: React.DragEvent, student: Student, classroomId: string, deskId: string, slotIndex: 0 | 1) => void;
+}> = ({ desk, deskNumber, classroomId, onDrop, onDragStart }) => {
+    const student1 = desk.students[0];
+    const student2 = desk.students[1];
+    
     const conflictMessages: string[] = [];
     if (student1 && student2) {
         const sameClass = student1.class === student2.class;
@@ -22,7 +99,7 @@ const DeskCard: React.FC<{ student1: Student | null; student2: Student | null; d
 
         if (sameClass) {
             conflictMessages.push('Same Class');
-        } else if (sameGrade) { // Only show same grade if not same class (less redundant)
+        } else if (sameGrade) { 
             conflictMessages.push('Same Grade Level');
         }
         if (sameLastName) {
@@ -39,17 +116,25 @@ const DeskCard: React.FC<{ student1: Student | null; student2: Student | null; d
             <div className="space-y-1">
                 <div className="flex items-center">
                     <span className="w-4 text-center font-mono text-slate-500 text-xs mr-2">1</span>
-                    <div className="w-full bg-white p-1.5 rounded text-sm truncate">
-                        <p className="font-medium text-slate-800">{student1 ? `${student1.firstName} ${student1.lastName}` : <span className="text-slate-400">Empty</span>}</p>
-                        {student1 && <p className="text-xs text-slate-500">{student1.class}</p>}
-                    </div>
+                    <StudentSlot
+                        student={student1}
+                        classroomId={classroomId}
+                        deskId={desk.id}
+                        slotIndex={0}
+                        onDrop={onDrop}
+                        onDragStart={onDragStart}
+                    />
                 </div>
                  <div className="flex items-center">
                     <span className="w-4 text-center font-mono text-slate-500 text-xs mr-2">2</span>
-                    <div className="w-full bg-white p-1.5 rounded text-sm truncate">
-                        <p className="font-medium text-slate-800">{student2 ? `${student2.firstName} ${student2.lastName}` : <span className="text-slate-400">Empty</span>}</p>
-                        {student2 && <p className="text-xs text-slate-500">{student2.class}</p>}
-                    </div>
+                    <StudentSlot
+                        student={student2}
+                        classroomId={classroomId}
+                        deskId={desk.id}
+                        slotIndex={1}
+                        onDrop={onDrop}
+                        onDragStart={onDragStart}
+                    />
                 </div>
             </div>
             {hasConflict && <p className="text-xs text-amber-700 mt-2 text-center font-medium">{conflictText}</p>}
@@ -58,7 +143,52 @@ const DeskCard: React.FC<{ student1: Student | null; student2: Student | null; d
 }
 
 
-const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ seatingChart, classrooms }) => {
+const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ seatingChart, setSeatingChart, classrooms }) => {
+
+  const handleDragStart = (e: React.DragEvent, student: Student, classroomId: string, deskId: string, slotIndex: 0 | 1) => {
+    const data = {
+        studentId: student.id,
+        sourceClassroomId: classroomId,
+        sourceDeskId: deskId,
+        sourceSlotIndex: slotIndex,
+    };
+    // Use 'text/plain' for broader browser compatibility.
+    e.dataTransfer.setData('text/plain', JSON.stringify(data));
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDrop = (e: React.DragEvent, targetClassroomId: string, targetDeskId: string, targetSlotIndex: 0 | 1) => {
+      e.preventDefault();
+      // Use 'text/plain' to retrieve the data.
+      const dataString = e.dataTransfer.getData('text/plain');
+      if (!dataString || !seatingChart) return;
+
+      const data = JSON.parse(dataString);
+      const { studentId, sourceClassroomId, sourceDeskId, sourceSlotIndex } = data;
+
+      if (sourceClassroomId === targetClassroomId && sourceDeskId === targetDeskId && sourceSlotIndex === targetSlotIndex) {
+          return;
+      }
+      
+      const newSeatingChart = JSON.parse(JSON.stringify(seatingChart));
+
+      const sourceDesk = newSeatingChart[sourceClassroomId]?.find((d: any) => d.id === sourceDeskId);
+      const targetDesk = newSeatingChart[targetClassroomId]?.find((d: any) => d.id === targetDeskId);
+      
+      if (!sourceDesk || !targetDesk) return;
+
+      const draggedStudent = sourceDesk.students[sourceSlotIndex];
+      if (!draggedStudent || draggedStudent.id !== studentId) return;
+
+      const targetStudent = targetDesk.students[targetSlotIndex];
+
+      // Swap students
+      targetDesk.students[targetSlotIndex] = draggedStudent;
+      sourceDesk.students[sourceSlotIndex] = targetStudent; // targetStudent can be null
+
+      setSeatingChart(newSeatingChart);
+  };
+
   const handlePrintStudentList = () => {
     const printWindow = window.open('', '_blank');
     if (!printWindow) {
@@ -456,7 +586,14 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ seatingChart, classroom
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
                         {desks.map((desk, index) => (
-                           <DeskCard key={desk.id} deskNumber={index + 1} student1={desk.students[0]} student2={desk.students[1]} />
+                           <DeskCard
+                             key={desk.id}
+                             desk={desk}
+                             deskNumber={index + 1}
+                             classroomId={classroom.id}
+                             onDrop={handleDrop}
+                             onDragStart={handleDragStart}
+                           />
                         ))}
                     </div>
                 </div>
