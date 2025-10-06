@@ -81,10 +81,10 @@ const ClassroomSetup: React.FC<ClassroomSetupProps> = ({ classrooms, setClassroo
 
           const newClassrooms: Classroom[] = results.data.map((row: any, index: number) => ({
             id: `classroom-${Date.now()}-${index}`,
-            name: row['classroom name'] || row['Classroom Name'] || '',
+            name: (row['classroom name'] || row['Classroom Name'] || '').trim(),
             capacity: parseInt(row['seat capacity'] || row['Seat Capacity'], 10) || 0,
-            supervisor: row['supervisor'] || row['Supervisor'] || '',
-            supervisor2: row['supervisor 2'] || row['Supervisor 2'] || '',
+            supervisor: (row['supervisor'] || row['Supervisor'] || '').trim(),
+            supervisor2: (row['supervisor 2'] || row['Supervisor 2'] || '').trim(),
           })).filter(c => c.name.trim() !== '' && c.capacity > 0);
 
           if (newClassrooms.length > 0) {
