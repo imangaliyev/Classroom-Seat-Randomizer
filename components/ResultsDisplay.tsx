@@ -287,20 +287,29 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ seatingChart, setSeatin
     </style></head><body>`;
 
     // --- Start: Calculate Summaries ---
-    const allGradeSummaries: Record<string, Record<string, number>> = {};
+    type GradeSummary = { total: number; languages: Record<string, number> };
+    type ClassroomSummary = Record<string, GradeSummary>;
+
+    const allSummaries: Record<string, ClassroomSummary> = {};
     classrooms.forEach(classroom => {
         const desks = seatingChart[classroom.id];
         if (!desks) return;
-        const gradeSummary: Record<string, number> = {};
+        const classroomSummary: ClassroomSummary = {};
         desks.forEach(desk => {
             desk.students.forEach(student => {
                 if (student) {
                     const grade = getGradeLevel(student.class);
-                    gradeSummary[grade] = (gradeSummary[grade] || 0) + 1;
+                    const lang = (student.language || 'N/A').toUpperCase();
+                    
+                    if (!classroomSummary[grade]) {
+                        classroomSummary[grade] = { total: 0, languages: {} };
+                    }
+                    classroomSummary[grade].total += 1;
+                    classroomSummary[grade].languages[lang] = (classroomSummary[grade].languages[lang] || 0) + 1;
                 }
             });
         });
-        allGradeSummaries[classroom.id] = gradeSummary;
+        allSummaries[classroom.id] = classroomSummary;
     });
     // --- End: Calculate Summaries ---
 
@@ -313,11 +322,15 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ seatingChart, setSeatin
         if (!seatingChart[classroom.id]) return;
         content += `<div class="summary-classroom">`;
         content += `<h3>Classroom: ${classroom.name}</h3>`;
-        const summary = allGradeSummaries[classroom.id];
+        const summary = allSummaries[classroom.id];
         if (summary && Object.keys(summary).length > 0) {
             content += '<ul>';
             Object.keys(summary).sort((a,b) => a.localeCompare(b, undefined, {numeric: true})).forEach(grade => {
-                content += `<li>Grade ${grade}: ${summary[grade]} students</li>`;
+                const gradeData = summary[grade];
+                const languageParts = Object.keys(gradeData.languages).sort().map(lang => 
+                    `${gradeData.languages[lang]} ${lang}`
+                ).join(', ');
+                content += `<li>Grade ${grade}: ${gradeData.total} students (${languageParts})</li>`;
             });
             content += '</ul>';
         } else {
@@ -384,11 +397,15 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ seatingChart, setSeatin
         
         content += `</tbody></table>`;
         
-        const classroomSummary = allGradeSummaries[classroom.id];
+        const classroomSummary = allSummaries[classroom.id];
         if (classroomSummary && Object.keys(classroomSummary).length > 0) {
             content += `<div class="grade-summary"><h4>Grade Summary:</h4><ul>`;
             Object.keys(classroomSummary).sort((a,b) => a.localeCompare(b, undefined, {numeric: true})).forEach(grade => {
-                content += `<li>Grade ${grade}: ${classroomSummary[grade]} students</li>`;
+                const gradeData = classroomSummary[grade];
+                const languageParts = Object.keys(gradeData.languages).sort().map(lang => 
+                    `${gradeData.languages[lang]} ${lang}`
+                ).join(', ');
+                content += `<li>Grade ${grade}: ${gradeData.total} students (${languageParts})</li>`;
             });
             content += `</ul></div>`;
         }
