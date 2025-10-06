@@ -273,17 +273,19 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ seatingChart, classroom
         content += `<p class="supervisor">Supervisor: ${classroom.supervisor || 'N/A'}</p>`;
         
         content += `<table><thead><tr>
+            <th style="width: 5%;">#</th>
             <th>First Name</th>
             <th>Last Name</th>
             <th>Class</th>
             <th style="width: 10%;">School ID</th>
             <th style="width: 10%;">Variant</th>
             <th style="width: 15%;">Student ID</th>
-            <th style="width: 25%;">Signature</th>
+            <th style="width: 20%;">Signature</th>
             </tr></thead><tbody>`;
         
-        studentsInClassroom.forEach(student => {
+        studentsInClassroom.forEach((student, index) => {
             content += `<tr>
+                <td>${index + 1}</td>
                 <td>${student.firstName}</td>
                 <td>${student.lastName}</td>
                 <td>${student.class}</td>
