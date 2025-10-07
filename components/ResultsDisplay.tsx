@@ -4,6 +4,9 @@ import { Classroom, SeatingChart, Student } from '../types';
 import { UserGroupIcon } from './icons/UserGroupIcon';
 import { PrintIcon } from './icons/PrintIcon';
 import { ShuffleIcon } from './icons/ShuffleIcon';
+import { ExcelIcon } from './icons/ExcelIcon';
+
+declare const XLSX: any;
 
 interface ResultsDisplayProps {
   seatingChart: SeatingChart;
@@ -112,14 +115,8 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ seatingChart, classroom
     });
     return conflicts;
   }, [seatingChart, classrooms, separateGenders]);
-
-  const handlePrintStudentList = () => {
-    const printWindow = window.open('', '_blank');
-    if (!printWindow) {
-      alert('Could not open print window. Please disable your pop-up blocker.');
-      return;
-    }
-
+  
+  const getGroupedStudents = () => {
     const studentsByOriginalClass: Record<string, { student: Student; classroomName: string }[]> = {};
 
     classrooms.forEach(classroom => {
@@ -137,6 +134,18 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ seatingChart, classroom
         });
       });
     });
+    
+    return studentsByOriginalClass;
+  }
+
+  const handlePrintStudentList = () => {
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      alert('Could not open print window. Please disable your pop-up blocker.');
+      return;
+    }
+    
+    const studentsByOriginalClass = getGroupedStudents();
 
     let content = `<html><head><title>Student List by Original Class</title>`;
     content += `<style>
@@ -185,6 +194,64 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ seatingChart, classroom
     printWindow.document.close();
     printWindow.focus();
     printWindow.print();
+  };
+
+  const handleExportToExcel = () => {
+    const wb = XLSX.utils.book_new();
+
+    // --- Part 1: Student Lists by Original Class ---
+    const studentsByOriginalClass = getGroupedStudents();
+    const originalClasses = Object.keys(studentsByOriginalClass).sort((a,b) => a.localeCompare(b, undefined, {numeric: true}));
+
+    originalClasses.forEach(className => {
+      const studentEntries = studentsByOriginalClass[className];
+      studentEntries.sort((a, b) => a.student.lastName.localeCompare(b.student.lastName) || a.student.firstName.localeCompare(b.student.firstName));
+      
+      const sheetData = studentEntries.map(({ student, classroomName }) => ({
+        'First Name': student.firstName,
+        'Last Name': student.lastName,
+        'Assigned Classroom': classroomName,
+      }));
+
+      const ws = XLSX.utils.json_to_sheet(sheetData);
+      XLSX.utils.book_append_sheet(wb, ws, className.substring(0, 31));
+    });
+
+    // --- Part 2: Supervisor Reports by Assigned Classroom ---
+    classrooms.forEach(classroom => {
+        const desks = seatingChart[classroom.id];
+        if (!desks) return;
+
+        const studentsInClassroom: { student: Student, deskNumber: number }[] = [];
+        desks.forEach((desk, index) => {
+            const deskNumber = index + 1;
+            if (desk.students[0]) studentsInClassroom.push({ student: desk.students[0], deskNumber });
+            if (desk.students[1]) studentsInClassroom.push({ student: desk.students[1], deskNumber });
+        });
+
+        studentsInClassroom.sort((a, b) => {
+            if (a.deskNumber !== b.deskNumber) return a.deskNumber - b.deskNumber;
+            return a.student.lastName.localeCompare(b.student.lastName) || a.student.firstName.localeCompare(b.student.firstName);
+        });
+
+        const sheetData = studentsInClassroom.map(({ student, deskNumber }, index) => ({
+            '#': index + 1,
+            'First Name': student.firstName,
+            'Last Name': student.lastName,
+            'Class': student.class,
+            'Desk #': `Desk ${deskNumber}`,
+            'Lang': student.language || '',
+            'Variant': student.variant || '',
+            'School ID': student.schoolId || '',
+            'Student ID': student.studentId || '',
+        }));
+
+        const ws = XLSX.utils.json_to_sheet(sheetData);
+        const sheetName = `SR - ${classroom.name}`.substring(0, 31);
+        XLSX.utils.book_append_sheet(wb, ws, sheetName);
+    });
+
+    XLSX.writeFile(wb, 'seating_reports.xlsx');
   };
 
   const handlePrintSeatingChart = () => {
@@ -512,6 +579,14 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ seatingChart, classroom
             >
               <PrintIcon />
               Export List
+            </button>
+            <button
+              onClick={handleExportToExcel}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-slate-100 text-slate-700 font-medium rounded-md hover:bg-slate-200 transition-colors text-sm"
+              aria-label="Export list to Excel"
+            >
+              <ExcelIcon />
+              Export Excel
             </button>
             <button
               onClick={handlePrintSeatingChart}
