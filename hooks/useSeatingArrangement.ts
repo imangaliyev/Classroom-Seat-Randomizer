@@ -1,3 +1,4 @@
+
 import { useState, useCallback } from 'react';
 import { Student, Classroom, SeatingChart, Desk } from '../types';
 
@@ -152,7 +153,7 @@ export const useSeatingArrangement = () => {
     setIsLoading(true);
     setError(null);
     setSeatingChart(null);
-    setProgress({ message: 'Starting process...', percentage: 0 });
+    setProgress({ message: '🤔 Starting process...', percentage: 0 });
     
     await new Promise(resolve => setTimeout(resolve, 300));
 
@@ -179,7 +180,7 @@ export const useSeatingArrangement = () => {
         const basePercentage = 5 + (90 / MAX_FULL_ATTEMPTS) * (fullAttempt - 1);
         
         setProgress({ 
-            message: `Creating arrangement... (Attempt ${fullAttempt}/${MAX_FULL_ATTEMPTS})`, 
+            message: `🛠️ Creating arrangement... (Attempt ${fullAttempt}/${MAX_FULL_ATTEMPTS})`, 
             percentage: basePercentage 
         });
         await new Promise(resolve => setTimeout(resolve, 400));
@@ -325,7 +326,7 @@ export const useSeatingArrangement = () => {
             const attemptPercentage = basePercentage + ((90 / MAX_FULL_ATTEMPTS) / MAX_RESOLUTION_ATTEMPTS) * resolutionAttempt;
             
             setProgress({ 
-                message: `Checking for conflicts...`, 
+                message: `🧐 Checking for conflicts...`, 
                 percentage: Math.min(99, attemptPercentage - 2)
             });
             await new Promise(resolve => setTimeout(resolve, 400));
@@ -333,14 +334,14 @@ export const useSeatingArrangement = () => {
             const conflictingClassrooms = checkForConflicts(chart, classrooms, separateGenders);
 
             if (conflictingClassrooms.length === 0) {
-                setProgress({ message: 'Arrangement successful!', percentage: 100 });
+                setProgress({ message: '🎉 Arrangement successful!', percentage: 100 });
                 await new Promise(resolve => setTimeout(resolve, 1000));
                 finalChart = chart;
                 break; // Exit resolution loop
             }
 
             setProgress({ 
-                message: `Resolving conflicts... (${resolutionAttempt}/${MAX_RESOLUTION_ATTEMPTS})`,
+                message: `⚙️ Resolving conflicts... (${resolutionAttempt}/${MAX_RESOLUTION_ATTEMPTS})`,
                 percentage: Math.min(99, attemptPercentage)
             });
             await new Promise(resolve => setTimeout(resolve, 400));
