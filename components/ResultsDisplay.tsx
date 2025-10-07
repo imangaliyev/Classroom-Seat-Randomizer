@@ -119,10 +119,10 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ seatingChart, classroom
       return;
     }
 
-    const studentsByOriginalClass: Record<string, { student: Student; classroomName: string; desk: string }[]> = {};
+    const studentsByOriginalClass: Record<string, { student: Student; classroomName: string }[]> = {};
 
     classrooms.forEach(classroom => {
-      seatingChart[classroom.id]?.forEach((desk, deskIndex) => {
+      seatingChart[classroom.id]?.forEach((desk) => {
         desk.students.forEach(student => {
           if (student) {
             if (!studentsByOriginalClass[student.class]) {
@@ -131,7 +131,6 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ seatingChart, classroom
             studentsByOriginalClass[student.class].push({
               student,
               classroomName: classroom.name,
-              desk: `Desk ${deskIndex + 1}`,
             });
           }
         });
@@ -164,14 +163,13 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ seatingChart, classroom
 
       content += `<div class="page">`;
       content += `<h2>Original Class: ${className}</h2>`;
-      content += `<table><thead><tr><th>First Name</th><th>Last Name</th><th>Assigned Classroom</th><th>Assigned Desk</th></tr></thead><tbody>`;
+      content += `<table><thead><tr><th>First Name</th><th>Last Name</th><th>Assigned Classroom</th></tr></thead><tbody>`;
       
-      studentEntries.forEach(({ student, classroomName, desk }) => {
+      studentEntries.forEach(({ student, classroomName }) => {
         content += `<tr>
             <td>${student.firstName}</td>
             <td>${student.lastName}</td>
             <td>${classroomName}</td>
-            <td>${desk}</td>
         </tr>`;
       });
       
@@ -276,7 +274,7 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ seatingChart, classroom
         body { 
             font-family: sans-serif;
             margin: 0;
-            font-size: 10pt;
+            font-size: 9pt;
         }
         .page { 
             page-break-before: always; 
@@ -297,7 +295,7 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ seatingChart, classroom
         ul { margin: 0; padding-left: 20px;}
         p.supervisor { font-size: 12px; color: #555; margin-top: 5px; margin-bottom: 0; }
         table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-        th, td { border: 1px solid #ddd; padding: 4px; text-align: left; vertical-align: middle; }
+        th, td { border: 1px solid #ddd; padding: 3px; text-align: left; vertical-align: middle; }
         th { background-color: #f2f2f2; text-align: left; }
         .grade-summary { margin-top: 20px; border-top: 1px solid #ccc; padding-top: 10px; font-size: 10px; }
         .grade-summary h4 { margin: 0 0 5px 0; font-size: 11px; }
@@ -360,8 +358,18 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ seatingChart, classroom
     content += `<div class="summary-container">`;
     classrooms.forEach(classroom => {
         if (!seatingChart[classroom.id]) return;
+        
+        let supervisorText = '';
+        if (classroom.supervisor && classroom.supervisor2) {
+            supervisorText = ` (${classroom.supervisor}, ${classroom.supervisor2})`;
+        } else if (classroom.supervisor) {
+            supervisorText = ` (${classroom.supervisor})`;
+        } else if (classroom.supervisor2) {
+             supervisorText = ` (${classroom.supervisor2})`;
+        }
+        
         content += `<div class="summary-classroom">`;
-        content += `<h3>Classroom: ${classroom.name}</h3>`;
+        content += `<h3>Classroom: ${classroom.name}${supervisorText}</h3>`;
         const summary = allSummaries[classroom.id];
         if (summary && Object.keys(summary).length > 0) {
             content += '<ul>';
@@ -412,13 +420,13 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ seatingChart, classroom
         }
         
         content += `<table><thead><tr>
-            <th style="width: 5%;">#</th>
+            <th style="width: 4%;">#</th>
             <th>First Name</th>
             <th>Last Name</th>
-            <th>Class</th>
+            <th style="width: 10%;">Class</th>
+            <th style="width: 10%;">Language</th>
             <th style="width: 15%;">School ID</th>
-            <th style="width: 10%;">Variant</th>
-            <th style="width: 10%;">Student ID</th>
+            <th style="width: 15%;">Student ID</th>
             <th style="width: 20%;">Signature</th>
             </tr></thead><tbody>`;
         
@@ -428,8 +436,8 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ seatingChart, classroom
                 <td>${student.firstName}</td>
                 <td>${student.lastName}</td>
                 <td>${student.class}</td>
+                <td>${student.language || ''}</td>
                 <td>${student.schoolId || ''}</td>
-                <td></td>
                 <td>${student.studentId || ''}</td>
                 <td></td>
             </tr>`;
