@@ -7,6 +7,7 @@ export interface Student {
   schoolId?: string;
   gender?: string;
   language?: string;
+  variant?: string;
 }
 
 export interface Classroom {

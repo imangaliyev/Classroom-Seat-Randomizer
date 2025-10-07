@@ -92,6 +92,7 @@ const App: React.FC = () => {
             schoolId: row['school id'] || '',
             gender: row['gender'] || '',
             language: row['language'] || '',
+            variant: row['variant'] || '',
         })).filter((s: Student) => s.firstName.trim() !== '' && s.lastName.trim() !== '' && s.class.trim() !== '');
         
         const genders = new Set(students.map(s => s.gender?.toUpperCase()).filter(Boolean));

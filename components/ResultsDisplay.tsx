@@ -1,3 +1,4 @@
+
 import React, { useMemo } from 'react';
 import { Classroom, SeatingChart, Student } from '../types';
 import { UserGroupIcon } from './icons/UserGroupIcon';
@@ -274,7 +275,7 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ seatingChart, classroom
         body { 
             font-family: sans-serif;
             margin: 0;
-            font-size: 7.5pt;
+            font-size: 8pt;
         }
         .page { 
             page-break-before: always; 
@@ -292,9 +293,10 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ seatingChart, classroom
         th, td { border: 1px solid #ddd; padding: 0 2px; text-align: left; vertical-align: middle; line-height: 1.1; }
         th { background-color: #f2f2f2; text-align: left; padding-top: 1px; padding-bottom: 1px; }
         .desk-odd { background-color: #ffffff; }
-        .desk-even { background-color: #f1f5f9; }
-        .desk-col { font-size: 7pt; width: 8ch; }
-        .schoolid-col { font-size: 7pt; width: 5ch; }
+        .desk-even { background-color: #f3f4f6; } /* Neutral gray for better greyscale printing */
+        .desk-col { font-size: 7.5pt; width: 8ch; }
+        .schoolid-col { font-size: 7.5pt; width: 5ch; }
+        .variant-col { width: 10ch; }
         .grade-summary { margin-top: 8px; border-top: 1px solid #ccc; padding-top: 4px; font-size: 8pt; }
         .grade-summary h4 { margin: 0 0 3px 0; font-size: 9pt; }
         .grade-summary ul { list-style-position: inside; padding-left: 0; margin: 0; }
@@ -432,6 +434,7 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ seatingChart, classroom
             <th style="width: 8%;">Class</th>
             <th class="desk-col">Desk #</th>
             <th style="width: 5%;">Language</th>
+            <th class="variant-col">Variant</th>
             <th class="schoolid-col">School ID</th>
             <th style="width: 12%;">Student ID</th>
             <th style="width: 15%;">Signature</th>
@@ -446,6 +449,7 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ seatingChart, classroom
                 <td>${student.class}</td>
                 <td class="desk-col">Desk ${deskNumber}</td>
                 <td>${student.language || ''}</td>
+                <td class="variant-col">${student.variant || ''}</td>
                 <td class="schoolid-col">${student.schoolId || ''}</td>
                 <td>${student.studentId || ''}</td>
                 <td></td>
