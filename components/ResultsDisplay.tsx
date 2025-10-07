@@ -434,7 +434,7 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ seatingChart, classroom
             <th>Last Name</th>
             <th style="width: 8%;">Class</th>
             <th class="desk-col">Desk #</th>
-            <th style="width: 5%;">Language</th>
+            <th style="width: 5%;">Lang</th>
             <th class="variant-col">Variant</th>
             <th class="schoolid-col">School ID</th>
             <th style="width: 12%;">Student ID</th>
