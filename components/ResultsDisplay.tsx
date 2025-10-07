@@ -302,7 +302,6 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ seatingChart, classroom
         .grade-summary ul { list-style-position: inside; padding-left: 0; margin: 0; }
         .footer {
             margin-top: 40px;
-            border-top: 1px solid #000;
             padding-top: 5px;
             display: flex;
             justify-content: space-around;
