@@ -11,7 +11,7 @@ const App: React.FC = () => {
     { id: `classroom-${Date.now()}`, name: 'Room 101', capacity: 20, supervisor: '' },
   ]);
   const [students, setStudents] = useState<Student[]>([]);
-  const { seatingChart, setSeatingChart, error, isLoading, generateSeatingChart, rerandomizeClassroom } = useSeatingArrangement();
+  const { seatingChart, setSeatingChart, error, isLoading, progress, generateSeatingChart, rerandomizeClassroom } = useSeatingArrangement();
 
   const [showGenderOption, setShowGenderOption] = useState(false);
   const [separateGenders, setSeparateGenders] = useState(false);
@@ -66,16 +66,23 @@ const App: React.FC = () => {
             <button
               onClick={handleRandomize}
               disabled={!canRandomize || isLoading}
-              className="inline-flex items-center gap-2 px-8 py-3 bg-indigo-600 text-white font-semibold rounded-lg shadow-md hover:bg-indigo-700 disabled:bg-slate-400 disabled:cursor-not-allowed transition-all duration-300 transform hover:scale-105 disabled:scale-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              className={`inline-flex items-center justify-center gap-2 px-8 font-semibold rounded-lg shadow-md transition-all duration-300 transform focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 ${isLoading ? 'py-2 bg-indigo-600 text-white w-64' : 'py-3 bg-indigo-600 text-white hover:bg-indigo-700 hover:scale-105'} disabled:bg-slate-400 disabled:cursor-not-allowed disabled:scale-100`}
             >
               {isLoading ? (
-                <>
-                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  Assigning...
-                </>
+                <div className="flex flex-col items-center w-full text-sm">
+                  <div className="flex items-center">
+                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <span>{progress?.message || 'Assigning...'}</span>
+                  </div>
+                  {progress && (
+                    <div className="w-full bg-slate-200/50 rounded-full h-1.5 mt-2">
+                      <div className="bg-white h-1.5 rounded-full" style={{ width: `${progress.percentage}%`, transition: 'width 0.3s ease-in-out' }}></div>
+                    </div>
+                  )}
+                </div>
               ) : (
                 <>
                   <ShuffleIcon />
