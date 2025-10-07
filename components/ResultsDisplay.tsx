@@ -139,12 +139,12 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ seatingChart, classroom
 
     let content = `<html><head><title>Student List by Original Class</title>`;
     content += `<style>
-        body { font-family: sans-serif; margin: 20px; }
+        body { font-family: sans-serif; margin: 20px; font-size: 12pt; }
         .page { page-break-inside: avoid; }
         h1 { font-size: 24px; text-align: center; margin-bottom: 20px; }
         h2 { font-size: 20px; border-bottom: 1px solid #ccc; padding-bottom: 5px; margin-top: 30px; margin-bottom: 15px; }
         table { width: 100%; border-collapse: collapse; }
-        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th, td { border: 1px solid #ddd; padding: 4px; text-align: left; }
         th { background-color: #f2f2f2; }
     </style></head><body>`;
     content += `<h1>Student Placement List by Original Class</h1>`;
@@ -279,15 +279,11 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ seatingChart, classroom
         .page { 
             page-break-before: always; 
             page-break-inside: avoid;
-            display: flex;
-            flex-direction: column;
-            height: 26.7cm;
         }
         .page:first-child { 
             page-break-before: avoid; 
         }
         .page-content {
-           flex-grow: 1;
         }
         h1 { text-align: center; font-size: 18px; margin-bottom: 20px; }
         h2 { font-size: 16px; border-bottom: 1px solid #ccc; padding-bottom: 5px; margin-bottom: 0; }
@@ -301,7 +297,7 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ seatingChart, classroom
         .grade-summary h4 { margin: 0 0 5px 0; font-size: 11px; }
         .grade-summary ul { list-style-position: inside; padding-left: 0; margin: 0; }
         .footer {
-            margin-top: auto;
+            margin-top: 40px;
             border-top: 1px solid #000;
             padding-top: 10px;
             display: flex;
