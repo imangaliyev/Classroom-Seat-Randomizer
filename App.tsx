@@ -23,6 +23,7 @@ const App: React.FC = () => {
   
   const [fileName, setFileName] = useState<string | null>(null);
   const [classSummary, setClassSummary] = useState<Record<string, number> | null>(null);
+  const [duplicateWarning, setDuplicateWarning] = useState<string | null>(null);
 
 
   const handleStudentsUpload = (uploadedStudents: Student[], uploadError: string | null, hasMixedGenders: boolean) => {
@@ -40,6 +41,7 @@ const App: React.FC = () => {
   };
 
   const handleRandomize = () => {
+    setDuplicateWarning(null);
     generateSeatingChart(students, classrooms, separateGenders);
   };
   
@@ -83,17 +85,42 @@ const App: React.FC = () => {
 
         const normalizedData = results.data.map(normalizeKeys);
 
-        const students: Student[] = normalizedData.map((row: any, index: number) => ({
-            id: `student-demo-${Date.now()}-${index}`,
-            firstName: row['first name'] || '',
-            lastName: row['last name'] || '',
-            class: row['class'] || '',
-            studentId: row['student id'] || '',
-            schoolId: row['school id'] || '',
-            gender: row['gender'] || '',
-            language: row['language'] || '',
-            variant: row['variant'] || '',
-        })).filter((s: Student) => s.firstName.trim() !== '' && s.lastName.trim() !== '' && s.class.trim() !== '');
+        const uniqueStudentsMap = new Map<string, Student>();
+        normalizedData.forEach((row: any, index: number) => {
+            const studentId = row['student id'] || '';
+            const firstName = row['first name'] || '';
+            const lastName = row['last name'] || '';
+            const studentClass = row['class'] || '';
+
+            if (firstName.trim() === '' || lastName.trim() === '' || studentClass.trim() === '') {
+                return; 
+            }
+
+            const key = studentId ? studentId : `${firstName}-${lastName}-${studentClass}`.toLowerCase();
+
+            if (!uniqueStudentsMap.has(key)) {
+                uniqueStudentsMap.set(key, {
+                    id: `student-demo-${Date.now()}-${index}`,
+                    firstName,
+                    lastName,
+                    class: studentClass,
+                    studentId,
+                    schoolId: row['school id'] || '',
+                    gender: row['gender'] || '',
+                    language: row['language'] || '',
+                    variant: row['variant'] || '',
+                });
+            }
+        });
+
+        const duplicateCount = normalizedData.length - uniqueStudentsMap.size;
+        if (duplicateCount > 0) {
+          setDuplicateWarning(`Found and ignored ${duplicateCount} duplicate student entries in demo data.`);
+        } else {
+          setDuplicateWarning(null);
+        }
+
+        const students: Student[] = Array.from(uniqueStudentsMap.values());
         
         const genders = new Set(students.map(s => s.gender?.toUpperCase()).filter(Boolean));
         const hasMixedGenders = genders.has('M') && genders.has('F');
@@ -149,6 +176,8 @@ const App: React.FC = () => {
                 setFileName={setFileName}
                 classSummary={classSummary}
                 setClassSummary={setClassSummary}
+                duplicateWarning={duplicateWarning}
+                setDuplicateWarning={setDuplicateWarning}
               />
             </div>
           </div>

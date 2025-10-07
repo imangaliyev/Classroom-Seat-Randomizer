@@ -299,25 +299,44 @@ export const useSeatingArrangement = () => {
           }
         };
 
-        const studentQueue = [...shuffledStudents];
+        let remainingStudents: Student[];
+
         if (separateGenders) {
+            const studentQueue = [...shuffledStudents];
             const maleQueue = studentQueue.filter(s => s.gender?.toUpperCase() === 'M');
             const femaleQueue = studentQueue.filter(s => s.gender?.toUpperCase() === 'F');
+            const otherQueue = studentQueue.filter(s => s.gender?.toUpperCase() !== 'M' && s.gender?.toUpperCase() !== 'F');
+            
             placeStudents(maleQueue);
             placeStudents(femaleQueue);
+            placeStudents(otherQueue);
+
+            remainingStudents = [...maleQueue, ...femaleQueue, ...otherQueue];
         } else {
+            const studentQueue = [...shuffledStudents];
             placeStudents(studentQueue);
+            remainingStudents = studentQueue;
         }
 
-        if (studentQueue.length > 0) {
+        if (remainingStudents.length > 0) {
             for (const classroom of classrooms) {
                 for (const desk of chart[classroom.id]) {
-                    if (studentQueue.length === 0) break;
-                    if (!desk.students[0]) desk.students[0] = studentQueue.shift()!;
-                    if (studentQueue.length === 0) break;
-                    if (!desk.students[1]) desk.students[1] = studentQueue.shift()!;
+                    if (remainingStudents.length === 0) break;
+                    if (!desk.students[0]) {
+                        desk.students[0] = remainingStudents.shift()!;
+                    }
+                    if (remainingStudents.length === 0) break;
+                    if (!desk.students[1]) {
+                        const s1 = desk.students[0];
+                        const s2 = remainingStudents[0];
+                        if (s1 && (!separateGenders || (separateGenders && s1.gender?.toUpperCase() === s2.gender?.toUpperCase()))) {
+                           desk.students[1] = remainingStudents.shift()!;
+                        } else if (!s1) { // Should not happen if logic is correct, but for safety
+                           desk.students[1] = remainingStudents.shift()!;
+                        }
+                    }
                 }
-                 if (studentQueue.length === 0) break;
+                 if (remainingStudents.length === 0) break;
             }
         }
         

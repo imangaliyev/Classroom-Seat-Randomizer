@@ -1,3 +1,4 @@
+
 import React, { useRef } from 'react';
 import { Student } from '../types';
 import { UploadIcon } from './icons/UploadIcon';
@@ -13,6 +14,8 @@ interface StudentUploadProps {
   setFileName: (name: string | null) => void;
   classSummary: Record<string, number> | null;
   setClassSummary: (summary: Record<string, number> | null) => void;
+  duplicateWarning: string | null;
+  setDuplicateWarning: (warning: string | null) => void;
 }
 
 // A helper to normalize object keys to lowercase and trimmed strings
@@ -33,7 +36,9 @@ const StudentUpload: React.FC<StudentUploadProps> = ({
   fileName,
   setFileName,
   classSummary,
-  setClassSummary
+  setClassSummary,
+  duplicateWarning,
+  setDuplicateWarning
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -41,6 +46,7 @@ const StudentUpload: React.FC<StudentUploadProps> = ({
     const file = event.target.files?.[0];
     if (file) {
       setFileName(file.name);
+      setDuplicateWarning(null); // Clear previous warnings
       Papa.parse(file, {
         header: true,
         skipEmptyLines: true,
@@ -69,17 +75,41 @@ const StudentUpload: React.FC<StudentUploadProps> = ({
             return;
           }
 
-          const students: Student[] = normalizedData.map((row: any, index: number) => ({
-            id: `student-${Date.now()}-${index}`,
-            firstName: row['first name'] || '',
-            lastName: row['last name'] || '',
-            class: row['class'] || '',
-            studentId: row['student id'] || row['id number'] || '',
-            schoolId: row['school id'] || '',
-            gender: row['gender'] || '',
-            language: row['language'] || '',
-            variant: row['variant'] || '',
-          })).filter(s => s.firstName.trim() !== '' && s.lastName.trim() !== '' && s.class.trim() !== '');
+          const uniqueStudentsMap = new Map<string, Student>();
+          normalizedData.forEach((row: any, index: number) => {
+              const studentId = row['student id'] || row['id number'] || '';
+              const firstName = row['first name'] || '';
+              const lastName = row['last name'] || '';
+              const studentClass = row['class'] || '';
+
+              if (firstName.trim() === '' || lastName.trim() === '' || studentClass.trim() === '') {
+                  return;
+              }
+
+              // Use studentId as the primary key. If not present, create a composite key.
+              const key = studentId ? studentId : `${firstName}-${lastName}-${studentClass}`.toLowerCase();
+
+              if (!uniqueStudentsMap.has(key)) {
+                  uniqueStudentsMap.set(key, {
+                      id: `student-${Date.now()}-${index}`,
+                      firstName,
+                      lastName,
+                      class: studentClass,
+                      studentId,
+                      schoolId: row['school id'] || '',
+                      gender: row['gender'] || '',
+                      language: row['language'] || '',
+                      variant: row['variant'] || '',
+                  });
+              }
+          });
+
+          const duplicateCount = normalizedData.length - uniqueStudentsMap.size;
+          if (duplicateCount > 0) {
+            setDuplicateWarning(`Found and ignored ${duplicateCount} duplicate student entries.`);
+          }
+          
+          const students: Student[] = Array.from(uniqueStudentsMap.values());
 
           const summary: Record<string, number> = {};
           students.forEach(student => {
@@ -125,13 +155,19 @@ const StudentUpload: React.FC<StudentUploadProps> = ({
           {fileName ? 'Upload a Different File' : 'Choose CSV File'}
         </button>
 
+        {duplicateWarning && (
+            <div className="mt-4 p-3 bg-amber-50 border border-amber-300 text-amber-800 text-sm rounded-md" role="alert">
+                <p><span className="font-semibold">Notice:</span> {duplicateWarning}</p>
+            </div>
+        )}
+
         {classSummary && (
           <div className="mt-4">
             <h4 className="font-semibold text-slate-600">
               {fileName === 'Demo School Data' ? 'Demo Data Summary:' : 'Upload Summary:'}
             </h4>
             <p className="text-sm text-slate-500 mb-2">
-              Found {Object.keys(classSummary).length} classes.
+              Found {studentCount} unique students in {Object.keys(classSummary).length} classes.
             </p>
             <div className="max-h-24 overflow-y-auto space-y-1 pr-2 border bg-slate-50 p-2 rounded-md">
               {Object.entries(classSummary).sort(([a], [b]) => a.localeCompare(b, undefined, { numeric: true })).map(([className, count]) => (

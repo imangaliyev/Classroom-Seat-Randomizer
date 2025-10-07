@@ -141,7 +141,8 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ seatingChart, classroom
     let content = `<html><head><title>Student List by Original Class</title>`;
     content += `<style>
         body { font-family: sans-serif; margin: 20px; font-size: 8pt; }
-        .page { page-break-inside: avoid; }
+        .page { page-break-before: always; page-break-inside: avoid; }
+        h1 + .page { page-break-before: avoid; }
         h1 { font-size: 20px; text-align: center; margin-bottom: 15px; }
         h2 { font-size: 16px; border-bottom: 1px solid #ccc; padding-bottom: 3px; margin-top: 20px; margin-bottom: 10px; }
         table { width: 100%; border-collapse: collapse; }
@@ -164,10 +165,11 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ seatingChart, classroom
 
       content += `<div class="page">`;
       content += `<h2>Original Class: ${className}</h2>`;
-      content += `<table><thead><tr><th>First Name</th><th>Last Name</th><th>Assigned Classroom</th></tr></thead><tbody>`;
+      content += `<table><thead><tr><th style="width: 3%;">#</th><th>First Name</th><th>Last Name</th><th>Assigned Classroom</th></tr></thead><tbody>`;
       
-      studentEntries.forEach(({ student, classroomName }) => {
+      studentEntries.forEach(({ student, classroomName }, index) => {
         content += `<tr>
+            <td>${index + 1}</td>
             <td>${student.firstName}</td>
             <td>${student.lastName}</td>
             <td>${classroomName}</td>
