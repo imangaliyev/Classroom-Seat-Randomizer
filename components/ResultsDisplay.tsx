@@ -139,13 +139,13 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ seatingChart, classroom
 
     let content = `<html><head><title>Student List by Original Class</title>`;
     content += `<style>
-        body { font-family: sans-serif; margin: 20px; font-size: 12pt; }
+        body { font-family: sans-serif; margin: 20px; font-size: 8pt; }
         .page { page-break-inside: avoid; }
-        h1 { font-size: 24px; text-align: center; margin-bottom: 20px; }
-        h2 { font-size: 20px; border-bottom: 1px solid #ccc; padding-bottom: 5px; margin-top: 30px; margin-bottom: 15px; }
+        h1 { font-size: 20px; text-align: center; margin-bottom: 15px; }
+        h2 { font-size: 16px; border-bottom: 1px solid #ccc; padding-bottom: 3px; margin-top: 20px; margin-bottom: 10px; }
         table { width: 100%; border-collapse: collapse; }
-        th, td { border: 1px solid #ddd; padding: 4px; text-align: left; }
-        th { background-color: #f2f2f2; }
+        th, td { border: 1px solid #ddd; padding: 0 3px; text-align: left; line-height: 1.1; }
+        th { background-color: #f2f2f2; padding-top: 1px; padding-bottom: 1px; }
     </style></head><body>`;
     content += `<h1>Student Placement List by Original Class</h1>`;
 
@@ -269,12 +269,12 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ seatingChart, classroom
     content += `<style>
         @page {
             size: A4;
-            margin: 1cm;
+            margin: 0.8cm;
         }
         body { 
             font-family: sans-serif;
             margin: 0;
-            font-size: 9pt;
+            font-size: 7.5pt;
         }
         .page { 
             page-break-before: always; 
@@ -283,37 +283,39 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ seatingChart, classroom
         .page:first-child { 
             page-break-before: avoid; 
         }
-        .page-content {
-        }
-        h1 { text-align: center; font-size: 18px; margin-bottom: 20px; }
-        h2 { font-size: 16px; border-bottom: 1px solid #ccc; padding-bottom: 5px; margin-bottom: 0; }
-        h3 { font-size: 14px; margin-bottom: 5px; margin-top: 15px; }
-        ul { margin: 0; padding-left: 20px;}
-        p.supervisor { font-size: 12px; color: #555; margin-top: 5px; margin-bottom: 0; }
-        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-        th, td { border: 1px solid #ddd; padding: 3px; text-align: left; vertical-align: middle; }
-        th { background-color: #f2f2f2; text-align: left; }
-        .grade-summary { margin-top: 20px; border-top: 1px solid #ccc; padding-top: 10px; font-size: 10px; }
-        .grade-summary h4 { margin: 0 0 5px 0; font-size: 11px; }
+        h1 { text-align: center; font-size: 14pt; margin-bottom: 10px; }
+        h2 { font-size: 12pt; border-bottom: 1px solid #ccc; padding-bottom: 2px; margin-bottom: 0; }
+        h3 { font-size: 10pt; margin-bottom: 4px; margin-top: 12px; }
+        ul { margin: 0; padding-left: 18px;}
+        p.supervisor { font-size: 9pt; color: #555; margin-top: 2px; margin-bottom: 0; }
+        table { width: 100%; border-collapse: collapse; margin-top: 5px; }
+        th, td { border: 1px solid #ddd; padding: 0 2px; text-align: left; vertical-align: middle; line-height: 1.1; }
+        th { background-color: #f2f2f2; text-align: left; padding-top: 1px; padding-bottom: 1px; }
+        .desk-odd { background-color: #ffffff; }
+        .desk-even { background-color: #f1f5f9; }
+        .desk-col { font-size: 7pt; width: 8ch; }
+        .schoolid-col { font-size: 7pt; width: 5ch; }
+        .grade-summary { margin-top: 8px; border-top: 1px solid #ccc; padding-top: 4px; font-size: 8pt; }
+        .grade-summary h4 { margin: 0 0 3px 0; font-size: 9pt; }
         .grade-summary ul { list-style-position: inside; padding-left: 0; margin: 0; }
         .footer {
             margin-top: 40px;
             border-top: 1px solid #000;
-            padding-top: 10px;
+            padding-top: 5px;
             display: flex;
             justify-content: space-around;
             text-align: center;
-            font-size: 10px;
+            font-size: 8pt;
         }
         .footer p { margin: 0; }
         .summary-container {
             column-count: 2;
-            column-gap: 40px;
-            margin-top: 20px;
+            column-gap: 30px;
+            margin-top: 15px;
         }
         .summary-classroom {
             break-inside: avoid-column;
-            padding-bottom: 15px;
+            padding-bottom: 10px;
         }
         .summary-classroom h3 {
             margin-top: 0;
@@ -350,7 +352,7 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ seatingChart, classroom
     content += `<h1>Supervisor Reports</h1>`;
     
     // --- Start: Add Summary Page ---
-    content += `<div class="page"><div class="page-content"><h2>Overall Grade Distribution Summary</h2>`;
+    content += `<div class="page"><div><h2>Overall Grade Distribution Summary</h2>`;
     content += `<div class="summary-container">`;
     classrooms.forEach(classroom => {
         if (!seatingChart[classroom.id]) return;
@@ -391,22 +393,30 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ seatingChart, classroom
         const desks = seatingChart[classroom.id];
         if (!desks) return;
         
-        const studentsInClassroom: Student[] = [];
-        desks.forEach(desk => {
-            if (desk.students[0]) studentsInClassroom.push(desk.students[0]);
-            if (desk.students[1]) studentsInClassroom.push(desk.students[1]);
+        const studentsInClassroom: { student: Student, deskNumber: number }[] = [];
+        desks.forEach((desk, index) => {
+            const deskNumber = index + 1;
+            if (desk.students[0]) {
+                studentsInClassroom.push({ student: desk.students[0], deskNumber });
+            }
+            if (desk.students[1]) {
+                studentsInClassroom.push({ student: desk.students[1], deskNumber });
+            }
         });
 
-        // Sort students
+        // Sort students by desk number, then by name
         studentsInClassroom.sort((a, b) => {
-            if (a.lastName.localeCompare(b.lastName) !== 0) {
-              return a.lastName.localeCompare(b.lastName);
+            if (a.deskNumber !== b.deskNumber) {
+                return a.deskNumber - b.deskNumber;
             }
-            return a.firstName.localeCompare(b.firstName);
+            if (a.student.lastName.localeCompare(b.student.lastName) !== 0) {
+              return a.student.lastName.localeCompare(b.student.lastName);
+            }
+            return a.student.firstName.localeCompare(b.student.firstName);
         });
 
         content += `<div class="page">`;
-        content += `<div class="page-content">`
+        content += `<div>`
         content += `<h2>Classroom: ${classroom.name}</h2>`;
         if (classroom.supervisor) {
           content += `<p class="supervisor">Supervisor: ${classroom.supervisor}</p>`;
@@ -416,24 +426,27 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ seatingChart, classroom
         }
         
         content += `<table><thead><tr>
-            <th style="width: 4%;">#</th>
+            <th style="width: 3%;">#</th>
             <th>First Name</th>
             <th>Last Name</th>
-            <th style="width: 10%;">Class</th>
-            <th style="width: 10%;">Language</th>
-            <th style="width: 15%;">School ID</th>
-            <th style="width: 15%;">Student ID</th>
-            <th style="width: 20%;">Signature</th>
+            <th style="width: 8%;">Class</th>
+            <th class="desk-col">Desk #</th>
+            <th style="width: 5%;">Language</th>
+            <th class="schoolid-col">School ID</th>
+            <th style="width: 12%;">Student ID</th>
+            <th style="width: 15%;">Signature</th>
             </tr></thead><tbody>`;
         
-        studentsInClassroom.forEach((student, index) => {
-            content += `<tr>
+        studentsInClassroom.forEach(({ student, deskNumber }, index) => {
+            const rowClass = deskNumber % 2 === 0 ? 'desk-even' : 'desk-odd';
+            content += `<tr class="${rowClass}">
                 <td>${index + 1}</td>
                 <td>${student.firstName}</td>
                 <td>${student.lastName}</td>
                 <td>${student.class}</td>
+                <td class="desk-col">Desk ${deskNumber}</td>
                 <td>${student.language || ''}</td>
-                <td>${student.schoolId || ''}</td>
+                <td class="schoolid-col">${student.schoolId || ''}</td>
                 <td>${student.studentId || ''}</td>
                 <td></td>
             </tr>`;

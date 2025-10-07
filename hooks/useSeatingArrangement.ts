@@ -402,5 +402,6 @@ export const useSeatingArrangement = () => {
   }, []);
   
 
-  return { seatingChart, setSeatingChart, error, isLoading, progress, generateSeatingChart, rerandomizeClassroom };
+  // FIX: Export setError so it can be used in the App component.
+  return { seatingChart, setSeatingChart, error, setError, isLoading, progress, generateSeatingChart, rerandomizeClassroom };
 };

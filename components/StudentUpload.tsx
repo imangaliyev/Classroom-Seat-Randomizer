@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useRef } from 'react';
 import { Student } from '../types';
 import { UploadIcon } from './icons/UploadIcon';
 import { UserGroupIcon } from './icons/UserGroupIcon';
@@ -9,6 +9,10 @@ interface StudentUploadProps {
   onStudentsUpload: (students: Student[], error: string | null, hasMixedGenders: boolean) => void;
   studentCount: number;
   totalCapacity: number;
+  fileName: string | null;
+  setFileName: (name: string | null) => void;
+  classSummary: Record<string, number> | null;
+  setClassSummary: (summary: Record<string, number> | null) => void;
 }
 
 // A helper to normalize object keys to lowercase and trimmed strings
@@ -22,9 +26,15 @@ const normalizeKeys = (obj: any): any => {
   return newObj;
 };
 
-const StudentUpload: React.FC<StudentUploadProps> = ({ onStudentsUpload, studentCount, totalCapacity }) => {
-  const [fileName, setFileName] = useState<string | null>(null);
-  const [classSummary, setClassSummary] = useState<Record<string, number> | null>(null);
+const StudentUpload: React.FC<StudentUploadProps> = ({ 
+  onStudentsUpload, 
+  studentCount, 
+  totalCapacity,
+  fileName,
+  setFileName,
+  classSummary,
+  setClassSummary
+}) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -116,12 +126,14 @@ const StudentUpload: React.FC<StudentUploadProps> = ({ onStudentsUpload, student
 
         {classSummary && (
           <div className="mt-4">
-            <h4 className="font-semibold text-slate-600">Upload Summary:</h4>
+            <h4 className="font-semibold text-slate-600">
+              {fileName === 'Demo School Data' ? 'Demo Data Summary:' : 'Upload Summary:'}
+            </h4>
             <p className="text-sm text-slate-500 mb-2">
               Found {Object.keys(classSummary).length} classes.
             </p>
             <div className="max-h-24 overflow-y-auto space-y-1 pr-2 border bg-slate-50 p-2 rounded-md">
-              {Object.entries(classSummary).map(([className, count]) => (
+              {Object.entries(classSummary).sort(([a], [b]) => a.localeCompare(b, undefined, { numeric: true })).map(([className, count]) => (
                 <div key={className} className="flex justify-between items-center text-sm p-1 rounded">
                   <span className="font-medium text-slate-700">{className}</span>
                   <span className="text-slate-500">{count} students</span>

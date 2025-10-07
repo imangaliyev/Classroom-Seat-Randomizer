@@ -6,16 +6,23 @@ import StudentUpload from './components/StudentUpload';
 import ResultsDisplay from './components/ResultsDisplay';
 import { useSeatingArrangement } from './hooks/useSeatingArrangement';
 import { ShuffleIcon } from './components/icons/ShuffleIcon';
+import { BuildingIcon } from './components/icons/BuildingIcon';
+import { DEMO_STUDENTS_CSV, DEMO_CLASSROOMS_CSV } from './demoData';
+
+declare const Papa: any;
 
 const App: React.FC = () => {
   const [classrooms, setClassrooms] = useState<Classroom[]>([
     { id: `classroom-${Date.now()}`, name: 'Room 101', capacity: 20, supervisor: '' },
   ]);
   const [students, setStudents] = useState<Student[]>([]);
-  const { seatingChart, setSeatingChart, error, isLoading, progress, generateSeatingChart, rerandomizeClassroom } = useSeatingArrangement();
+  const { seatingChart, setSeatingChart, error, setError, isLoading, progress, generateSeatingChart, rerandomizeClassroom } = useSeatingArrangement();
 
   const [showGenderOption, setShowGenderOption] = useState(false);
   const [separateGenders, setSeparateGenders] = useState(false);
+  
+  const [fileName, setFileName] = useState<string | null>(null);
+  const [classSummary, setClassSummary] = useState<Record<string, number> | null>(null);
 
 
   const handleStudentsUpload = (uploadedStudents: Student[], uploadError: string | null, hasMixedGenders: boolean) => {
@@ -40,6 +47,70 @@ const App: React.FC = () => {
     rerandomizeClassroom(classroomId, classrooms, separateGenders);
   };
 
+  const handleLoadDemoData = () => {
+    // Parse classrooms
+    Papa.parse(DEMO_CLASSROOMS_CSV, {
+      header: true,
+      skipEmptyLines: true,
+      complete: (results: any) => {
+        if (results.data) {
+          const newClassrooms: Classroom[] = results.data.map((row: any, index: number) => ({
+            id: `classroom-demo-${Date.now()}-${index}`,
+            name: (row['classroom name'] || '').trim(),
+            capacity: parseInt(row['seat capacity'], 10) || 0,
+            supervisor: (row['supervisor'] || '').trim(),
+            supervisor2: (row['supervisor 2'] || '').trim(),
+          })).filter((c: Classroom) => c.name.trim() !== '' && c.capacity > 0);
+          setClassrooms(newClassrooms);
+        }
+      }
+    });
+
+    // Parse students
+    Papa.parse(DEMO_STUDENTS_CSV, {
+      header: true,
+      skipEmptyLines: true,
+      complete: (results: any) => {
+        const normalizeKeys = (obj: any): any => {
+          const newObj: any = {};
+          for (const key in obj) {
+            if (Object.prototype.hasOwnProperty.call(obj, key)) {
+              newObj[key.toLowerCase().trim()] = obj[key];
+            }
+          }
+          return newObj;
+        };
+
+        const normalizedData = results.data.map(normalizeKeys);
+
+        const students: Student[] = normalizedData.map((row: any, index: number) => ({
+            id: `student-demo-${Date.now()}-${index}`,
+            firstName: row['first name'] || '',
+            lastName: row['last name'] || '',
+            class: row['class'] || '',
+            studentId: row['student id'] || '',
+            schoolId: row['school id'] || '',
+            gender: row['gender'] || '',
+            language: row['language'] || '',
+        })).filter((s: Student) => s.firstName.trim() !== '' && s.lastName.trim() !== '' && s.class.trim() !== '');
+        
+        const genders = new Set(students.map(s => s.gender?.toUpperCase()).filter(Boolean));
+        const hasMixedGenders = genders.has('M') && genders.has('F');
+
+        handleStudentsUpload(students, null, hasMixedGenders);
+
+        const summary: Record<string, number> = {};
+        students.forEach(student => {
+            summary[student.class] = (summary[student.class] || 0) + 1;
+        });
+        setClassSummary(summary);
+        setFileName('Demo School Data');
+        setSeatingChart(null);
+        setError(null);
+      }
+    });
+  };
+
   const totalCapacity = useMemo(() => {
     return classrooms.reduce((acc, c) => acc + c.capacity, 0);
   }, [classrooms]);
@@ -56,10 +127,28 @@ const App: React.FC = () => {
 
         <main>
           <div className="bg-white p-6 rounded-2xl shadow-lg mb-8">
-            <h2 className="text-2xl font-semibold mb-4 text-slate-800 border-b pb-3">Setup</h2>
+            <div className="flex flex-wrap justify-between items-center border-b pb-3 mb-4 gap-2">
+              <h2 className="text-2xl font-semibold text-slate-800">Setup</h2>
+               <button 
+                  onClick={handleLoadDemoData}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-slate-100 text-slate-700 font-medium rounded-md hover:bg-slate-200 transition-colors text-sm"
+              >
+                  <BuildingIcon />
+                  Use Demo School
+              </button>
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-4">
               <ClassroomSetup classrooms={classrooms} setClassrooms={setClassrooms} />
-              <StudentUpload onStudentsUpload={handleStudentsUpload} studentCount={students.length} totalCapacity={totalCapacity} />
+              <StudentUpload 
+                onStudentsUpload={handleStudentsUpload} 
+                studentCount={students.length} 
+                totalCapacity={totalCapacity}
+                fileName={fileName}
+                setFileName={setFileName}
+                classSummary={classSummary}
+                setClassSummary={setClassSummary}
+              />
             </div>
           </div>
 
