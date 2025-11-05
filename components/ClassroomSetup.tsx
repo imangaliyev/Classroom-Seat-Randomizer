@@ -105,7 +105,11 @@ const ClassroomSetup: React.FC<ClassroomSetupProps> = ({ classrooms, setClassroo
     <div className="p-4 border border-slate-200 rounded-lg h-full">
       <h3 className="text-xl font-semibold text-slate-700 mb-3">1. Define Classrooms</h3>
       <p className="text-sm text-slate-500 mb-4">
-        Add classrooms manually, or upload a .csv file to replace the list. <br/>
+        Add classrooms manually, or upload a .csv file.
+        <a href="https://docs.google.com/spreadsheets/d/120BGHPLVNIoQUuGaqqOguG7ZnF01BGftBVjyeJrGgac/copy" target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:underline font-medium ml-1">
+          Open template.
+        </a>
+        <br/>
         Required columns: "classroom name", "seat capacity". Optional: "supervisor", "supervisor 2".
       </p>
       <div className="space-y-3 max-h-60 overflow-y-auto pr-2">

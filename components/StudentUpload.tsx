@@ -1,4 +1,3 @@
-
 import React, { useRef } from 'react';
 import { Student } from '../types';
 import { UploadIcon } from './icons/UploadIcon';
@@ -138,7 +137,14 @@ const StudentUpload: React.FC<StudentUploadProps> = ({
     <div className="p-4 border border-slate-200 rounded-lg h-full flex flex-col justify-between">
       <div>
         <h3 className="text-xl font-semibold text-slate-700 mb-3">2. Upload Student List</h3>
-        <p className="text-sm text-slate-500 mb-4">Upload a .csv file with columns: "first name", "last name", "class". Optional: "student id", "school id", "gender" (M/F), "language", "variant".</p>
+        <p className="text-sm text-slate-500 mb-4">
+          Upload a .csv file with student data.
+          <a href="https://docs.google.com/spreadsheets/d/1VMWuvcuV2d3gh0ON20l2iOZNLG_rn2RTalE9LPlyxU8/copy" target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:underline font-medium ml-1">
+            Open template.
+          </a>
+          <br/>
+          Required: "first name", "last name", "class". Optional: "student id", "school id", "gender" (M/F), "language", "variant".
+        </p>
         
         <input
           type="file"
